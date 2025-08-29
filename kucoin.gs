@@ -68,7 +68,7 @@ function getKucoinAccounts(wallet) {
     method: 'GET',
     headers: {
       'KC-API-KEY': wallet.api_key,
-      'KC-API-SIGNATURE': signature,
+      'KC-API-SIGN': signature,
       'KC-API-TIMESTAMP': timestamp,
       'KC-API-PASSPHRASE': passphrase,
       'KC-API-KEY-VERSION': '2'
@@ -116,7 +116,7 @@ function getKucoinTokenInfo(currency, wallet) {
       method: 'GET',
       headers: {
         'KC-API-KEY': wallet.api_key,
-        'KC-API-SIGNATURE': signature,
+        'KC-API-SIGN': signature,
         'KC-API-TIMESTAMP': timestamp,
         'KC-API-PASSPHRASE': passphrase,
         'KC-API-KEY-VERSION': '2'
@@ -181,7 +181,7 @@ function getKucoinTokenInfo(currency, wallet) {
  * @returns {string} Base64 encoded signature
  */
 function createKucoinSignature(method, endpoint, body, timestamp, secret) {
-  const message = timestamp + method + endpoint + body;
+  const message = timestamp + method.toUpperCase() + endpoint + (body || '');
   const signature = Utilities.computeHmacSha256Signature(message, secret);
   return Utilities.base64Encode(signature);
 }
@@ -237,7 +237,7 @@ function getKucoinTicker(symbol, wallet) {
       method: 'GET',
       headers: {
         'KC-API-KEY': wallet.api_key,
-        'KC-API-SIGNATURE': signature,
+        'KC-API-SIGN': signature,
         'KC-API-TIMESTAMP': timestamp,
         'KC-API-PASSPHRASE': passphrase,
         'KC-API-KEY-VERSION': '2'
@@ -286,7 +286,7 @@ function getKucoinTradingPairs(wallet) {
       method: 'GET',
       headers: {
         'KC-API-KEY': wallet.api_key,
-        'KC-API-SIGNATURE': signature,
+        'KC-API-SIGN': signature,
         'KC-API-TIMESTAMP': timestamp,
         'KC-API-PASSPHRASE': passphrase,
         'KC-API-KEY-VERSION': '2'
