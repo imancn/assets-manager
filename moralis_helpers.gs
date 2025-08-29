@@ -112,7 +112,7 @@ function moralisGetWithChainFallback(path, chain, queryExtras) {
  * @returns {number} balance in native units
  */
 function moralisGetNativeBalance(address, chain) {
-  const data = moralisGetWithChainFallback(`/address/${address}/balance`, chain, {});
+  const data = moralisGetWithChainFallback(`/${address}/balance`, chain, {});
   if (!data || typeof data.balance === 'undefined') return 0;
   // Moralis returns balance in wei-like units (for EVM). Derive decimals by chain.
   const decimals = chain === 'bsc' ? 18 : 18; // EVM chains default 18
@@ -129,7 +129,7 @@ function moralisGetNativeBalance(address, chain) {
  * @returns {number}
  */
 function moralisGetTokenBalance(address, tokenAddress, decimals, chain) {
-  const data = moralisGetWithChainFallback(`/address/${address}/erc20`, chain, { token_addresses: tokenAddress });
+  const data = moralisGetWithChainFallback(`/${address}/erc20`, chain, { token_addresses: tokenAddress });
   if (!data || !data.length || !data[0] || typeof data[0].balance === 'undefined') return 0;
   const raw = data[0].balance;
   const amount = parseFloat(raw) / Math.pow(10, decimals || 18);
@@ -144,7 +144,7 @@ function moralisGetTokenBalance(address, tokenAddress, decimals, chain) {
  * @returns {number}
  */
 function moralisGetTokenBalanceBySymbol(address, symbol, chain) {
-  const data = moralisGetWithChainFallback(`/address/${address}/erc20`, chain, {});
+  const data = moralisGetWithChainFallback(`/${address}/erc20`, chain, {});
   if (!data || !data.length) return 0;
   const token = data.find(t => String(t.symbol).toUpperCase() === String(symbol).toUpperCase());
   if (!token || typeof token.balance === 'undefined') return 0;
@@ -160,7 +160,7 @@ function moralisGetTokenBalanceBySymbol(address, symbol, chain) {
  * @returns {Array<{symbol:string, contract_address:string, decimals:number, balance:number}>}
  */
 function moralisListErc20Balances(address, chain) {
-  const data = moralisGetWithChainFallback(`/address/${address}/erc20`, chain, {});
+  const data = moralisGetWithChainFallback(`/${address}/erc20`, chain, {});
   const results = [];
   if (Array.isArray(data)) {
     for (var i = 0; i < data.length; i++) {
