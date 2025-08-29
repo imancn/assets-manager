@@ -253,7 +253,7 @@ function readEnv(key, defaultValue = '') {
 /**
  * Helper function to read wallets configuration
  */
-function readWalletsConfig() {
+function debugReadWalletsConfig() {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = ss.getSheetByName('Wallets');
@@ -286,7 +286,7 @@ function readWalletsConfig() {
 /**
  * Helper function to read coins configuration
  */
-function readCoinsConfig() {
+function debugReadCoinsConfig() {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = ss.getSheetByName('Coins Management');

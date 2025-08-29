@@ -125,17 +125,17 @@ function createWalletsSheet(ss) {
   // Default wallets and accounts from provided configuration (wallets only live in Wallets sheet)
   const wallets = [
     // Ethereum
-    ['1', 'ETH_DIRTY', 'ETH', '0x66E35642dd0a0eAaF622c33b99F1a87DaB23E15B', '', '', '', 'TRUE', '', 'Dirty wallet address for Ethereum'],
-    ['2', 'ETH_CLEAN', 'ETH', '0xf96B6397e26173beaBB4ce26215C65b7f590F338', '', '', '', 'TRUE', '', 'Clean wallet address for Ethereum'],
+    ['1', 'ETH_DIRTY', 'ETH', '0x66E35642dd0a0eAaF622c33b99F1a87DaB23E15B', '', '', '', true, '', 'Dirty wallet address for Ethereum'],
+    ['2', 'ETH_CLEAN', 'ETH', '0xf96B6397e26173beaBB4ce26215C65b7f590F338', '', '', '', true, '', 'Clean wallet address for Ethereum'],
     // BSC
-    ['3', 'BSC_DIRTY', 'BSC', '0x66E35642dd0a0eAaF622c33b99F1a87DaB23E15B', '', '', '', 'TRUE', '', 'Dirty wallet address for BSC'],
-    ['4', 'BSC_CLEAN', 'BSC', '0xf96B6397e26173beaBB4ce26215C65b7f590F338', '', '', '', 'TRUE', '', 'Clean wallet address for BSC'],
+    ['3', 'BSC_DIRTY', 'BSC', '0x66E35642dd0a0eAaF622c33b99F1a87DaB23E15B', '', '', '', true, '', 'Dirty wallet address for BSC'],
+    ['4', 'BSC_CLEAN', 'BSC', '0xf96B6397e26173beaBB4ce26215C65b7f590F338', '', '', '', true, '', 'Clean wallet address for BSC'],
     // Tron
-    ['5', 'TRX_DIRTY', 'TRX', 'TUDpHcoPZpuwpf6FdyH83b7VCf4FWcHSSm', '', '', '', 'TRUE', '', 'Dirty wallet address for Tron'],
-    ['6', 'TRX_CLEAN', 'TRX', 'TYyzbobn3UXD1PGBwRQ8AHAhm7RHWNUdNC', '', '', '', 'TRUE', '', 'Clean wallet address for Tron'],
+    ['5', 'TRX_DIRTY', 'TRX', 'TUDpHcoPZpuwpf6FdyH83b7VCf4FWcHSSm', '', '', '', true, '', 'Dirty wallet address for Tron'],
+    ['6', 'TRX_CLEAN', 'TRX', 'TYyzbobn3UXD1PGBwRQ8AHAhm7RHWNUdNC', '', '', '', true, '', 'Clean wallet address for Tron'],
     // KuCoin accounts (credentials from provided configuration)
-    ['7', 'KUCOIN_ACCOUNT1', 'KUCOIN', '', '68a5f274d12f8b0001f035fc', 'bfd14289-e533-4223-b931-5c155eb45b33', 'w3dLrUJ0XVpE6K', 'TRUE', '', 'KuCoin Account 1'],
-    ['8', 'KUCOIN_ACCOUNT2', 'KUCOIN', '', '68a5ed6354d535000172c30e', 'fa72eb3a-a403-4472-badb-dc9cc2e3d575', 'q@poCkj25l#px27', 'TRUE', '', 'KuCoin Account 2']
+    ['7', 'KUCOIN_ACCOUNT1', 'KUCOIN', '', '68a5f274d12f8b0001f035fc', 'bfd14289-e533-4223-b931-5c155eb45b33', 'w3dLrUJ0XVpE6K', true, '', 'KuCoin Account 1'],
+    ['8', 'KUCOIN_ACCOUNT2', 'KUCOIN', '', '68a5ed6354d535000172c30e', 'fa72eb3a-a403-4472-badb-dc9cc2e3d575', 'q@poCkj25l#px27', true, '', 'KuCoin Account 2']
   ];
   
   walletsSheet.getRange(2, 1, wallets.length, wallets[0].length).setValues(wallets);
@@ -151,9 +151,10 @@ function createWalletsSheet(ss) {
   console.log(`Wallets sheet created with ${writtenData.length - 1} wallet rows (excluding header)`);
   
   // Verify active wallets
+  const isTrue = (val) => val === true || String(val).trim().toUpperCase() === 'TRUE' || String(val).trim() === '1';
   let activeCount = 0;
   for (let i = 1; i < writtenData.length; i++) {
-    if (writtenData[i][7] === 'TRUE') {
+    if (isTrue(writtenData[i][7])) {
       activeCount++;
     }
   }
@@ -178,42 +179,42 @@ function createCoinsManagementSheet(ss) {
   // Sample token data - Updated with comprehensive network coverage
   const tokens = [
     // Ethereum Network
-    ['ETH', 'Ethereum', 'ETH', '0x0000000000000000000000000000000000000000', '18', '1027', 'TRUE'],
-    ['USDT', 'Tether USD', 'ETH', '0xdAC17F958D2ee523a2206206994597C13D831ec7', '6', '825', 'TRUE'],
-    ['USDC', 'USD Coin', 'ETH', '0xA0b86a33E6441b8C4C8C8C8C8C8C8C8C8C8C8C8C8', '6', '3408', 'TRUE'],
-    ['WBTC', 'Wrapped Bitcoin', 'ETH', '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', '8', '1', 'TRUE'],
-    ['LINK', 'Chainlink', 'ETH', '0x514910771AF9Ca656af840dff83E8264EcF986CA', '18', '1975', 'TRUE'],
+    ['ETH', 'Ethereum', 'ETH', '0x0000000000000000000000000000000000000000', '18', '1027', true],
+    ['USDT', 'Tether USD', 'ETH', '0xdAC17F958D2ee523a2206206994597C13D831ec7', '6', '825', true],
+    ['USDC', 'USD Coin', 'ETH', '0xA0b86a33E6441b8C4C8C8C8C8C8C8C8C8C8C8C8C8', '6', '3408', true],
+    ['WBTC', 'Wrapped Bitcoin', 'ETH', '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', '8', '1', true],
+    ['LINK', 'Chainlink', 'ETH', '0x514910771AF9Ca656af840dff83E8264EcF986CA', '18', '1975', true],
     
     // Binance Smart Chain
-    ['BNB', 'Binance Coin', 'BSC', '0x0000000000000000000000000000000000000000', '18', '1839', 'TRUE'],
-    ['BUSD', 'Binance USD', 'BSC', '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56', '18', '4687', 'TRUE'],
-    ['CAKE', 'PancakeSwap', 'BSC', '0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82', '18', '7186', 'TRUE'],
+    ['BNB', 'Binance Coin', 'BSC', '0x0000000000000000000000000000000000000000', '18', '1839', true],
+    ['BUSD', 'Binance USD', 'BSC', '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56', '18', '4687', true],
+    ['CAKE', 'PancakeSwap', 'BSC', '0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82', '18', '7186', true],
     
     // Solana Network
-    ['SOL', 'Solana', 'SOL', '', '9', '5426', 'TRUE'],
-    ['USDC', 'USD Coin', 'SOL', 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', '6', '3408', 'TRUE'],
-    ['RAY', 'Raydium', 'SOL', '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R', '6', '5884', 'TRUE'],
+    ['SOL', 'Solana', 'SOL', '', '9', '5426', true],
+    ['USDC', 'USD Coin', 'SOL', 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', '6', '3408', true],
+    ['RAY', 'Raydium', 'SOL', '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R', '6', '5884', true],
     
     // Bitcoin Network
-    ['BTC', 'Bitcoin', 'BTC', '', '8', '1', 'TRUE'],
+    ['BTC', 'Bitcoin', 'BTC', '', '8', '1', true],
     
     // XRP Network
-    ['XRP', 'XRP', 'XRP', '', '6', '52', 'TRUE'],
+    ['XRP', 'XRP', 'XRP', '', '6', '52', true],
     
     // TON Network
-    ['TON', 'Toncoin', 'TON', '', '9', '11419', 'TRUE'],
+    ['TON', 'Toncoin', 'TON', '', '9', '11419', true],
     
     // Tron Network
-    ['TRX', 'TRON', 'TRX', '0x0000000000000000000000000000000000000000', '6', '1958', 'TRUE'],
-    ['USDT', 'Tether USD', 'TRX', 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t', '6', '825', 'TRUE'],
-    ['USDC', 'USD Coin', 'TRX', 'TEkxiTehnzSmSe2XqrBj4w32RUN966rdz8', '6', '3408', 'TRUE'],
+    ['TRX', 'TRON', 'TRX', '0x0000000000000000000000000000000000000000', '6', '1958', true],
+    ['USDT', 'Tether USD', 'TRX', 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t', '6', '825', true],
+    ['USDC', 'USD Coin', 'TRX', 'TEkxiTehnzSmSe2XqrBj4w32RUN966rdz8', '6', '3408', true],
     
     // Cardano Network
-    ['ADA', 'Cardano', 'ADA', '', '6', '2010', 'TRUE'],
+    ['ADA', 'Cardano', 'ADA', '', '6', '2010', true],
     
     // Polygon Network
-    ['MATIC', 'Polygon', 'MATIC', '0x0000000000000000000000000000000000000000', '18', '3890', 'TRUE'],
-    ['USDC', 'USD Coin', 'MATIC', '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174', '6', '3408', 'TRUE']
+    ['MATIC', 'Polygon', 'MATIC', '0x0000000000000000000000000000000000000000', '18', '3890', true],
+    ['USDC', 'USD Coin', 'MATIC', '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174', '6', '3408', true]
   ];
   
   coinsSheet.getRange(2, 1, tokens.length, tokens[0].length).setValues(tokens);
@@ -229,9 +230,10 @@ function createCoinsManagementSheet(ss) {
   console.log(`Coins Management sheet created with ${writtenData.length - 1} coin rows (excluding header)`);
   
   // Verify active coins
+  const isTrue = (val) => val === true || String(val).trim().toUpperCase() === 'TRUE' || String(val).trim() === '1';
   let activeCount = 0;
   for (let i = 1; i < writtenData.length; i++) {
-    if (writtenData[i][6] === 'TRUE') {
+    if (isTrue(writtenData[i][6])) {
       activeCount++;
     }
   }
