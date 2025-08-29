@@ -125,6 +125,19 @@ function fetchAndStoreBalances(triggerType = 'MANUAL') {
           case 'BSC':
             balances = getBscBalances(wallet.address, coins);
             break;
+          case 'KUCOIN':
+            try {
+              balances = getKucoinBalances(wallet);
+            } catch (ex) {
+              const msg = String(ex && ex.message ? ex.message : ex).toLowerCase();
+              if (msg.indexOf('unavailable in the u.s') >= 0 || msg.indexOf('current area: us') >= 0 || msg.indexOf('region') >= 0) {
+                console.warn(`Skipping KuCoin wallet ${wallet.name} due to region restrictions`);
+                balances = [];
+              } else {
+                throw ex;
+              }
+            }
+            break;
           case 'SOL':
             balances = getSolanaBalances(wallet.address, coins);
             break;
@@ -136,9 +149,6 @@ function fetchAndStoreBalances(triggerType = 'MANUAL') {
             break;
           case 'TON':
             balances = getTonBalances(wallet.address, coins);
-            break;
-          case 'KUCOIN':
-            balances = getKucoinBalances(wallet);
             break;
           default:
             console.warn(`Unsupported network: ${wallet.network}`);

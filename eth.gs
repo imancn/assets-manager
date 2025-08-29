@@ -157,18 +157,15 @@ function getEthErc20Balances(address, coins) {
       const listed = moralisListErc20Balances(address, 'eth');
       for (var i = 0; i < listed.length; i++) {
         var t = listed[i];
-        var known = coins.find(c => c.network === 'ETH' && String(c.symbol).toUpperCase() === String(t.symbol).toUpperCase());
-        if (known) {
-          var already = balances.find(b => b.symbol === known.symbol);
-          if (!already) {
-            balances.push({
-              symbol: known.symbol,
-              balance: t.balance,
-              network: 'ETH',
-              contract_address: t.contract_address || known.contract_address,
-              decimals: known.decimals || t.decimals
-            });
-          }
+        var already = balances.find(b => b.symbol === t.symbol && (b.contract_address === t.contract_address || !b.contract_address));
+        if (!already) {
+          balances.push({
+            symbol: t.symbol,
+            balance: t.balance,
+            network: 'ETH',
+            contract_address: t.contract_address || '',
+            decimals: t.decimals || 18
+          });
         }
       }
     } catch (e) {
