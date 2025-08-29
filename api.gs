@@ -67,14 +67,22 @@ function fetchAndStoreBalances(triggerType = 'MANUAL') {
     
     // Read wallets configuration
     const wallets = readWalletsConfig();
+    console.log(`Read ${wallets.length} wallets from configuration`);
+    
     if (!wallets || wallets.length === 0) {
-      throw new Error('No active wallets found in configuration');
+      const error = 'No active wallets found in configuration. Please run setup first or check Wallets sheet.';
+      console.error(error);
+      throw new Error(error);
     }
     
     // Read coins configuration
     const coins = readCoinsConfig();
+    console.log(`Read ${coins.length} coins from configuration`);
+    
     if (!coins || coins.length === 0) {
-      throw new Error('No coins configured in Coins Management');
+      const error = 'No coins configured in Coins Management. Please run setup first or check Coins Management sheet.';
+      console.error(error);
+      throw new Error(error);
     }
     
     // Get unique symbols for CMC price fetch
@@ -205,37 +213,82 @@ function getLastSync() {
 }
 
 /**
+ * Get dashboard statistics
+ * @returns {Object} Dashboard stats including wallet count, coin count, and last sync info
+ */
+function getDashboardStats() {
+  try {
+    const wallets = readWalletsConfig();
+    const coins = readCoinsConfig();
+    const lastSync = getLastSync();
+    
+    return {
+      success: true,
+      totalWallets: wallets.length,
+      totalCoins: coins.length,
+      lastSync: lastSync
+    };
+  } catch (error) {
+    console.error('Error getting dashboard stats:', error);
+    return {
+      success: false,
+      error: error.toString(),
+      totalWallets: 0,
+      totalCoins: 0,
+      lastSync: { timestamp: '', status: 'Error', formatted: 'Error' }
+    };
+  }
+}
+
+/**
  * Read wallets configuration from the Wallets sheet
  * @returns {Array} Array of wallet objects
  */
 function readWalletsConfig() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName('Wallets');
-  if (!sheet) return [];
-  
-  const data = sheet.getDataRange().getValues();
-  if (data.length <= 1) return [];
-  
-  const wallets = [];
-  for (let i = 1; i < data.length; i++) {
-    const row = data[i];
-    if (row[0] && row[7] === 'TRUE') { // Check if ID exists and Active is TRUE
-      wallets.push({
-        id: row[0],
-        name: row[1],
-        network: row[2],
-        address: row[3],
-        api_key: row[4],
-        api_secret: row[5],
-        passphrase: row[6],
-        active: row[7],
-        last_sync: row[8],
-        notes: row[9]
-      });
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName('Wallets');
+    if (!sheet) {
+      console.log('Wallets sheet not found');
+      return [];
     }
+    
+    const data = sheet.getDataRange().getValues();
+    console.log(`Wallets sheet has ${data.length} rows`);
+    
+    if (data.length <= 1) {
+      console.log('Wallets sheet has no data rows');
+      return [];
+    }
+    
+    const wallets = [];
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      console.log(`Row ${i}: ID=${row[0]}, Active=${row[7]}, Active type=${typeof row[7]}`);
+      
+      if (row[0] && row[7] === 'TRUE') { // Check if ID exists and Active is TRUE
+        wallets.push({
+          id: row[0],
+          name: row[1],
+          network: row[2],
+          address: row[3],
+          api_key: row[4],
+          api_secret: row[5],
+          passphrase: row[6],
+          active: row[7],
+          last_sync: row[8],
+          notes: row[9]
+        });
+      }
+    }
+    
+    console.log(`Found ${wallets.length} active wallets`);
+    return wallets;
+    
+  } catch (error) {
+    console.error('Error in readWalletsConfig:', error);
+    return [];
   }
-  
-  return wallets;
 }
 
 /**
@@ -243,30 +296,47 @@ function readWalletsConfig() {
  * @returns {Array} Array of coin objects
  */
 function readCoinsConfig() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName('Coins Management');
-  if (!sheet) return [];
-  
-  const data = sheet.getDataRange().getValues();
-  if (data.length <= 1) return [];
-  
-  const coins = [];
-  for (let i = 1; i < data.length; i++) {
-    const row = data[i];
-    if (row[0] && row[6] === 'TRUE') { // Check if Symbol exists and Active is TRUE
-      coins.push({
-        symbol: row[0],
-        name: row[1],
-        network: row[2],
-        contract_address: row[3],
-        decimals: parseInt(row[4]) || 18,
-        cmc_id: row[5],
-        active: row[6]
-      });
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName('Coins Management');
+    if (!sheet) {
+      console.log('Coins Management sheet not found');
+      return [];
     }
+    
+    const data = sheet.getDataRange().getValues();
+    console.log(`Coins Management sheet has ${data.length} rows`);
+    
+    if (data.length <= 1) {
+      console.log('Coins Management sheet has no data rows');
+      return [];
+    }
+    
+    const coins = [];
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      console.log(`Row ${i}: Symbol=${row[0]}, Active=${row[6]}, Active type=${typeof row[6]}`);
+      
+      if (row[0] && row[6] === 'TRUE') { // Check if Symbol exists and Active is TRUE
+        coins.push({
+          symbol: row[0],
+          name: row[1],
+          network: row[2],
+          contract_address: row[3],
+          decimals: parseInt(row[4]) || 18,
+          cmc_id: row[5],
+          active: row[6]
+        });
+      }
+    }
+    
+    console.log(`Found ${coins.length} active coins`);
+    return coins;
+    
+  } catch (error) {
+    console.error('Error in readCoinsConfig:', error);
+    return [];
   }
-  
-  return coins;
 }
 
 /**
@@ -385,6 +455,95 @@ function testSetup() {
     return {
       success: false,
       tests: [`✗ Test failed with error: ${error.toString()}`]
+    };
+  }
+}
+
+/**
+ * Manually run setup to create/refresh sheets
+ * @returns {Object} Setup result
+ */
+function runSetupFromUI() {
+  try {
+    console.log('Running setup from UI...');
+    const result = runSetup();
+    
+    if (result.success) {
+      // Update environment variables after setup
+      writeEnv('LAST_SYNC_TIMESTAMP', '');
+      writeEnv('LAST_SYNC_STATUS', 'Never');
+      
+      console.log('Setup completed successfully from UI');
+      return {
+        success: true,
+        message: 'Setup completed successfully! Sheets have been created/refreshed.',
+        timestamp: new Date().toISOString()
+      };
+    } else {
+      console.error('Setup failed from UI:', result.error);
+      return {
+        success: false,
+        error: result.error || 'Setup failed',
+        timestamp: new Date().toISOString()
+      };
+    }
+    
+  } catch (error) {
+    console.error('Error running setup from UI:', error);
+    return {
+      success: false,
+      error: error.toString(),
+      timestamp: new Date().toISOString()
+    };
+  }
+}
+
+/**
+ * Check if the system has been properly set up
+ * @returns {Object} Setup status information
+ */
+function checkSetupStatus() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const requiredSheets = ['ENV', 'Wallets', 'Coins Management', 'Financial Records'];
+    const missingSheets = [];
+    const existingSheets = [];
+    
+    for (const sheetName of requiredSheets) {
+      const sheet = ss.getSheetByName(sheetName);
+      if (sheet) {
+        existingSheets.push(sheetName);
+      } else {
+        missingSheets.push(sheetName);
+      }
+    }
+    
+    const wallets = readWalletsConfig();
+    const coins = readCoinsConfig();
+    
+    const isSetupComplete = missingSheets.length === 0 && wallets.length > 0 && coins.length > 0;
+    
+    return {
+      success: true,
+      isSetupComplete,
+      existingSheets,
+      missingSheets,
+      walletCount: wallets.length,
+      coinCount: coins.length,
+      message: isSetupComplete ? 
+        'System is properly configured and ready to use.' : 
+        'System needs setup. Missing sheets: ' + missingSheets.join(', ') + 
+        (wallets.length === 0 ? ' No active wallets found.' : '') +
+        (coins.length === 0 ? ' No active coins found.' : '')
+    };
+    
+  } catch (error) {
+    console.error('Error checking setup status:', error);
+    return {
+      success: false,
+      error: error.toString(),
+      isSetupComplete: false,
+      message: 'Error checking setup status: ' + error.toString()
     };
   }
 }

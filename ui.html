@@ -261,6 +261,11 @@
                                 <div class="stat-label">Status</div>
                             </div>
                         </div>
+                        <div class="text-center mt-3">
+                            <button id="refresh-dashboard-btn" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-arrow-clockwise me-2"></i>Refresh Dashboard
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -283,9 +288,13 @@
                                     <i class="bi bi-play-circle me-2"></i>
                                     Run Now
                                 </button>
-                                <button id="test-setup-btn" class="btn btn-outline-secondary">
+                                <button id="test-setup-btn" class="btn btn-outline-secondary me-2">
                                     <i class="bi bi-check-circle me-2"></i>
                                     Test Setup
+                                </button>
+                                <button id="run-setup-btn" class="btn btn-outline-warning">
+                                    <i class="bi bi-gear me-2"></i>
+                                    Run Setup
                                 </button>
                             </div>
                             <div class="col-md-6">
@@ -488,6 +497,9 @@
         });
         
         function initializeApp() {
+            // Check setup status first
+            checkSetupStatus();
+            
             // Load initial data
             loadDashboardData();
             loadFinancialRecords();
@@ -496,8 +508,10 @@
             // Set up event listeners
             document.getElementById('run-now-btn').addEventListener('click', runBalanceFetch);
             document.getElementById('test-setup-btn').addEventListener('click', testSetup);
+            document.getElementById('run-setup-btn').addEventListener('click', runSetup);
             document.getElementById('refresh-records-btn').addEventListener('click', loadFinancialRecords);
             document.getElementById('auto-refresh-toggle').addEventListener('change', toggleAutoRefresh);
+            document.getElementById('refresh-dashboard-btn').addEventListener('click', loadDashboardData); // New listener
             
             // Check auto-refresh setting
             const autoRefresh = localStorage.getItem('autoRefresh') === 'true';
@@ -510,6 +524,26 @@
         function updateCurrentTime() {
             const now = new Date();
             document.getElementById('current-time').textContent = now.toLocaleTimeString();
+        }
+        
+        function checkSetupStatus() {
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result.success) {
+                        if (!result.isSetupComplete) {
+                            showAlert(result.message + ' Please click "Run Setup" to initialize the system.', 'warning');
+                        } else {
+                            console.log('System is properly configured');
+                        }
+                    } else {
+                        showAlert('Error checking setup status: ' + result.error, 'danger');
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    console.error('Error checking setup status:', error);
+                    showAlert('Error checking setup status: ' + error.toString(), 'danger');
+                })
+                .checkSetupStatus();
         }
         
         function loadDashboardData() {
@@ -544,9 +578,30 @@
                 })
                 .getLastSync();
             
-            // Load wallet and coin counts (placeholder for now)
-            document.getElementById('total-wallets').textContent = '5';
-            document.getElementById('total-coins').textContent = '9';
+            // Load wallet and coin counts from actual data
+            loadDashboardStats();
+        }
+        
+        function loadDashboardStats() {
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result.success) {
+                        document.getElementById('total-wallets').textContent = result.totalWallets;
+                        document.getElementById('total-coins').textContent = result.totalCoins;
+                        document.getElementById('last-sync-time').textContent = result.lastSync.formatted;
+                        document.getElementById('sync-status').textContent = result.lastSync.status;
+                    } else {
+                        console.error('Error loading dashboard stats:', result.error);
+                        document.getElementById('total-wallets').textContent = 'Error';
+                        document.getElementById('total-coins').textContent = 'Error';
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    console.error('Error loading dashboard stats:', error);
+                    document.getElementById('total-wallets').textContent = 'Error';
+                    document.getElementById('total-coins').textContent = 'Error';
+                })
+                .getDashboardStats();
         }
         
         function loadFinancialRecords() {
@@ -618,7 +673,7 @@
                         }
                         
                         // Update dashboard
-                        loadDashboardData();
+                        loadDashboardStats();
                         loadFinancialRecords();
                         
                         // Show success message
@@ -633,8 +688,17 @@
                     btn.innerHTML = originalText;
                     btn.disabled = false;
                     
-                    addLogEntry(`Error: ${error.toString()}`, 'error');
-                    showAlert('Balance fetch failed. Check logs for details.', 'danger');
+                    const errorMessage = error.toString();
+                    addLogEntry(`Fatal error in fetchAndStoreBalances: ${errorMessage}`, 'error');
+                    
+                    // Show more helpful error messages
+                    if (errorMessage.includes('No active wallets found')) {
+                        showAlert('No active wallets found. Please run setup first or check your wallet configuration.', 'warning');
+                    } else if (errorMessage.includes('No coins configured')) {
+                        showAlert('No coins configured. Please run setup first or check your coin configuration.', 'warning');
+                    } else {
+                        showAlert('Balance fetch failed. Check logs for details.', 'danger');
+                    }
                 })
                 .fetchAndStoreBalances('MANUAL');
         }
@@ -666,6 +730,41 @@
                     console.error('Test error:', error);
                 })
                 .testSetup();
+        }
+        
+        function runSetup() {
+            if (!confirm('This will recreate all sheets and reset configuration. Are you sure you want to continue?')) {
+                return;
+            }
+            
+            const btn = document.getElementById('run-setup-btn');
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = '<span class="loading-spinner me-2"></span>Setting up...';
+            btn.disabled = true;
+            
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    
+                    if (result.success) {
+                        showAlert('Setup completed successfully! Sheets have been created/refreshed.', 'success');
+                        
+                        // Refresh dashboard data
+                        loadDashboardStats();
+                        loadFinancialRecords();
+                        loadConfiguration();
+                    } else {
+                        showAlert('Setup failed: ' + (result.error || 'Unknown error'), 'danger');
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    showAlert('Setup failed: ' + error.toString(), 'danger');
+                })
+                .runSetupFromUI();
         }
         
         function addLogEntry(message, type = 'info') {

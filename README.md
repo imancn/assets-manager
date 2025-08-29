@@ -1,369 +1,143 @@
-# Assests Manager - Crypto Portfolio Management Tool
+# Assets Manager - Google Apps Script
 
-A comprehensive single-page Google Apps Script web application for managing cryptocurrency assets across multiple networks. Built with modern web technologies and designed for ease of use.
-
-## 🌟 Features
-
-- **Multi-Network Support**: ETH, BSC, SOL, BTC, XRP, TON, TRX
-- **Exchange Integration**: KuCoin API support
-- **Real-time Pricing**: CoinMarketCap integration
-- **Automated Tracking**: Scheduled balance updates
-- **Modern UI**: Responsive Bootstrap-based interface
-- **Google Sheets Integration**: Seamless data management
-
-## 📁 Project Structure
-
-```
-├── setup.gs              # Sheet setup and initialization
-├── api.gs                # Main API and orchestration
-├── cmc.gs                # CoinMarketCap price fetching
-├── kucoin.gs             # KuCoin exchange integration
-├── eth.gs                # Ethereum network support
-├── bsc.gs                # Binance Smart Chain support
-├── solana.gs             # Solana network support
-├── bitcoin.gs            # Bitcoin network support
-├── xrp.gs                # XRP network support
-├── ton.gs                # TON network support
-├── tron.gs               # Tron network support
-├── ui.html               # Main web interface
-├── appsscript.json       # GAS manifest
-└── README.md             # This file
-```
+A comprehensive cryptocurrency portfolio management system built with Google Apps Script that supports multiple blockchain networks and exchanges.
 
 ## 🚀 Quick Start
 
-### 1. Create Google Apps Script Project
+### 1. Initial Setup
+1. **Open the Google Apps Script project** in your Google Drive
+2. **Click "Run Setup"** in the web app interface to create all required sheets
+3. **Configure your API keys** in the ENV sheet (optional for basic functionality)
+4. **Verify setup** by clicking "Test Setup"
 
-1. Go to [script.google.com](https://script.google.com)
-2. Click "New Project"
-3. Rename project to "Assests Manager"
+### 2. First Run
+1. **Click "Run Now"** to fetch your first balance snapshot
+2. **Check the Progress section** for real-time updates
+3. **View results** in the Financial Records section
 
-### 2. Upload Project Files
-
-1. Copy each `.gs` file content into separate script files
-2. Copy `ui.html` content into an HTML file
-3. Replace `appsscript.json` content with the provided manifest
-
-### 3. Create Google Sheet
-
-1. Create a new Google Sheet
-2. Run the `runSetup()` function from `setup.gs`
-3. This will create all required sheets with sample data
-
-### 4. Configure API Keys
-
-Edit the `ENV` sheet and add your API keys:
-
-| Key | Value | Description |
-|-----|-------|-------------|
-| `CMC_API_KEY` | Your CMC API key | CoinMarketCap API key |
-| `MORALIS_API_KEY` | Your Moralis key | Ethereum RPC access |
-| `INFURA_PROJECT_ID` | Your Infura ID | Ethereum RPC access |
-| `TRONGRID_API_KEY` | Your TronGrid key | Tron network access |
-| `KUCOIN_API_KEY` | Your KuCoin key | KuCoin exchange access |
-| `KUCOIN_SECRET` | Your KuCoin secret | KuCoin API secret |
-| `KUCOIN_PASSPHRASE` | Your KuCoin passphrase | KuCoin API passphrase |
-
-### 5. Deploy as Web App
-
-1. Click "Deploy" → "New deployment"
-2. Choose "Web app" as type
-3. Set access to "Anyone" or "Anyone with Google Account"
-4. Click "Deploy"
-
-## ⚙️ Configuration
-
-### Environment Variables
-
-The `ENV` sheet contains all configuration:
-
-- **API Keys**: External service authentication
-- **RPC URLs**: Blockchain network endpoints
-- **Retry Settings**: Error handling configuration
-- **Dry Run Mode**: Test without writing data
-- **Auto-refresh**: Scheduled execution interval
-
-### Wallet Configuration
-
-Configure wallets in the `Wallets` sheet:
-
-| Column | Description |
-|--------|-------------|
-| ID | Unique identifier |
-| Name | Wallet display name |
-| Network | Blockchain network |
-| Address | Wallet address |
-| API Keys | Exchange credentials |
-| Active | Enable/disable wallet |
-| Notes | Additional information |
-
-### Coin Management
-
-Manage supported tokens in `Coins Management`:
-
-| Column | Description |
-|--------|-------------|
-| Symbol | Token symbol (e.g., BTC) |
-| Name | Full token name |
-| Network | Supported network |
-| Contract Address | Token contract (if applicable) |
-| Decimals | Token decimal places |
-| CMC ID | CoinMarketCap identifier |
-| Active | Enable/disable token |
-
-## 🔧 API Endpoints
-
-### Main Functions
-
-- `runSetup()` - Initialize sheets and sample data
-- `fetchAndStoreBalances(triggerType)` - Main balance fetching
-- `getLastSync()` - Get last synchronization status
-- `testSetup()` - Verify system configuration
-
-### Network Modules
-
-Each network has dedicated functions:
-
-- **Ethereum**: `getEthBalances()`, `getEthNativeBalance()`
-- **BSC**: `getBscBalances()`, `getBscNativeBalance()`
-- **Solana**: `getSolanaBalances()`, `getSolanaNativeBalance()`
-- **Bitcoin**: `getBitcoinBalances()`, `getBitcoinNativeBalance()`
-- **XRP**: `getXrpBalances()`, `getXrpNativeBalance()`
-- **TON**: `getTonBalances()`, `getTonNativeBalance()`
-- **Tron**: `getTronBalances()`, `getTronNativeBalance()`
-
-### Exchange Integration
-
-- **KuCoin**: `getKucoinBalances()`, `getKucoinAccounts()`
-- **CoinMarketCap**: `fetchCmcPrices()`, `getCmcPrice()`
-
-## 📊 Data Flow
-
-1. **Configuration**: Read wallet and coin settings from sheets
-2. **Balance Fetching**: Query each network for wallet balances
-3. **Price Data**: Get current prices from CoinMarketCap
-4. **Record Creation**: Generate financial records with USD values
-5. **Data Storage**: Append records to Financial Records sheet
-6. **Status Update**: Update last sync timestamp and status
-
-## 🎨 User Interface
-
-### Dashboard Overview
-
-- Active wallet count
-- Supported coin count
-- Last sync information
-- System status
-
-### Controls
-
-- **Run Now**: Manual balance fetch
-- **Test Setup**: Verify configuration
-- **Auto-refresh**: Scheduled execution toggle
-
-### Progress Tracking
-
-- Real-time operation status
-- Detailed log entries
-- Error reporting
-
-### Financial Records
-
-- Recent balance snapshots
-- Network and token information
-- USD valuations
-- Status tracking
-
-## 🧪 Testing
-
-### Test Functions
-
-Each module includes test functions:
-
-```javascript
-// Test CoinMarketCap
-testFetchCmcPrices()
-
-// Test Ethereum
-testEthFunctions()
-
-// Test BSC
-testBscFunctions()
-
-// Test Solana
-testSolanaFunctions()
-
-// Test Bitcoin
-testBitcoinFunctions()
-
-// Test XRP
-testXrpFunctions()
-
-// Test TON
-testTonFunctions()
-
-// Test Tron
-testTronFunctions()
-
-// Test KuCoin
-testKucoinConnection(wallet)
-```
-
-### Setup Verification
-
-Run `testSetup()` to verify:
-
-- Sheet existence
-- Environment variables
-- Wallet configuration
-- Coin configuration
-
-## 🔒 Security Considerations
-
-- **API Keys**: Store in ENV sheet, never commit to version control
-- **Access Control**: Use Google Apps Script's built-in security
-- **Rate Limiting**: Implemented for external APIs
-- **Error Handling**: Comprehensive error logging and recovery
-
-## 📈 Performance Optimization
-
-- **Batch Processing**: CoinMarketCap API batching
-- **Caching**: RPC response caching where possible
-- **Parallel Processing**: Independent network queries
-- **Retry Logic**: Exponential backoff for failed requests
-
-## 🚨 Troubleshooting
+## 🔧 Troubleshooting
 
 ### Common Issues
 
-1. **API Key Errors**: Verify keys in ENV sheet
-2. **Network Timeouts**: Check RPC endpoint availability
-3. **Rate Limiting**: Reduce request frequency
-4. **Sheet Errors**: Ensure proper sheet structure
+#### "No active wallets found in configuration"
+- **Solution**: Click "Run Setup" to create the required sheets
+- **Check**: Verify the Wallets sheet exists and has data
+- **Verify**: Ensure wallet rows have "TRUE" in the Active column
 
-### Debug Mode
+#### "No coins configured in Coins Management"
+- **Solution**: Click "Run Setup" to create the required sheets
+- **Check**: Verify the Coins Management sheet exists and has data
+- **Verify**: Ensure coin rows have "TRUE" in the Active column
 
-Enable detailed logging:
+#### Dashboard shows incorrect counts
+- **Solution**: Click "Refresh Dashboard" button
+- **Check**: Verify sheets contain the expected data
+- **Run**: Use "Test Setup" to verify configuration
 
-```javascript
-// Set in ENV sheet
-DEBUG_MODE = true
-LOG_LEVEL = DEBUG
-```
+### Setup Verification
+The system creates:
+- **10 sample wallets** (all active by default)
+- **22 supported coins** across multiple networks
+- **Configuration sheets** for environment variables
+- **Financial records** sheet for balance snapshots
 
-### Error Logs
+## 📊 Supported Networks
 
-Check Google Apps Script execution logs:
+- **Ethereum (ETH)** - Native and ERC-20 tokens
+- **Binance Smart Chain (BSC)** - BEP-20 tokens
+- **Solana (SOL)** - SPL tokens
+- **Bitcoin (BTC)** - Native Bitcoin
+- **XRP Ledger (XRP)** - Native XRP
+- **TON Blockchain (TON)** - Native TON
+- **Tron (TRX)** - TRC-20 tokens
+- **KuCoin Exchange** - Exchange balances
 
-1. Go to script.google.com
-2. Select your project
-3. Click "Executions" in left sidebar
-4. View detailed logs for each run
+## 🎯 Features
 
-## 🔄 Scheduled Execution
+- **Real-time balance fetching** across multiple networks
+- **Automatic price updates** via CoinMarketCap API
+- **Comprehensive logging** with progress tracking
+- **Auto-refresh capability** (configurable intervals)
+- **Error handling** with detailed feedback
+- **Setup validation** and testing tools
 
-### Time-driven Triggers
+## 🔑 API Configuration
 
-Set up automatic execution:
+### Required APIs (Optional for basic functionality)
+- **CoinMarketCap**: For real-time price data
+- **Moralis**: For Ethereum/BSC balance fetching
+- **BSCScan**: For BSC transaction verification
+- **Solscan**: For Solana balance fetching
+- **KuCoin**: For exchange balance fetching
 
-```javascript
-// Create trigger for every 5 minutes
-ScriptApp.newTrigger('fetchAndStoreBalances')
-  .timeBased()
-  .everyMinutes(5)
-  .create();
+### Configuration Steps
+1. Get API keys from respective services
+2. Update the ENV sheet with your keys
+3. Set `DRY_RUN` to `false` when ready for production
+4. Test with "Test Setup" button
 
-// Create trigger for daily execution
-ScriptApp.newTrigger('fetchAndStoreBalances')
-  .timeBased()
-  .everyDays(1)
-  .atHour(9)
-  .create();
-```
+## 📁 Sheet Structure
 
-### Manual Triggers
+### Wallets Sheet
+- **ID**: Unique identifier
+- **Name**: Human-readable wallet name
+- **Network**: Blockchain network (ETH, BSC, SOL, etc.)
+- **Address**: Wallet address or API credentials
+- **Active**: TRUE/FALSE to enable/disable
 
-- Use "Run Now" button in UI
-- Call functions directly from script editor
-- Use Google Apps Script API
+### Coins Management Sheet
+- **Symbol**: Token symbol (ETH, BTC, USDT, etc.)
+- **Name**: Full token name
+- **Network**: Supported blockchain
+- **Contract Address**: Token contract (if applicable)
+- **Active**: TRUE/FALSE to enable/disable
 
-## 📱 Mobile Support
+### Financial Records Sheet
+- **Timestamp**: When balance was recorded
+- **Type**: Balance type (wallet, exchange)
+- **Network**: Blockchain network
+- **Symbol**: Token symbol
+- **Balance**: Token amount
+- **Price USD**: USD price at time of recording
+- **Value USD**: Total USD value
 
-The UI is fully responsive and optimized for:
+## 🚨 Error Handling
 
-- Mobile phones
-- Tablets
-- Desktop computers
-- Touch interfaces
+The system provides detailed error messages and logging:
+- **Setup errors**: Clear guidance on missing sheets
+- **API errors**: Network and authentication issues
+- **Validation errors**: Data format and configuration problems
+- **Progress tracking**: Real-time status updates
 
-## 🌐 Browser Compatibility
+## 🔄 Maintenance
 
-- Chrome (recommended)
-- Firefox
-- Safari
-- Edge
-- Mobile browsers
+### Regular Tasks
+- **Monitor logs** for errors and warnings
+- **Update API keys** when they expire
+- **Review wallet configurations** for accuracy
+- **Check network status** for blockchain issues
 
-## 📚 API Documentation
-
-### External APIs Used
-
-- **CoinMarketCap**: `/v1/cryptocurrency/quotes/latest`
-- **KuCoin**: `/api/v1/accounts`, `/api/v2/currencies`
-- **Ethereum RPC**: `eth_getBalance`, `eth_call`
-- **BSC RPC**: Same as Ethereum
-- **Solana RPC**: `getBalance`, `getTokenAccountsByOwner`
-- **Blockstream**: Bitcoin address and UTXO data
-- **XRP RPC**: `account_info`, `account_lines`
-- **TON Center**: `/v2/getAddressBalance`, `/v2/getWalletInfo`
-- **TronGrid**: `/v1/accounts`, `/v1/contracts`
-
-## 🤝 Contributing
-
-### Development Workflow
-
-1. Fork the repository
-2. Create feature branch
-3. Implement changes
-4. Test thoroughly
-5. Submit pull request
-
-### Code Standards
-
-- Use ES6+ syntax
-- Follow Google Apps Script best practices
-- Include comprehensive error handling
-- Add test functions for new modules
-- Update documentation
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🙏 Acknowledgments
-
-- Google Apps Script team
-- Bootstrap framework
-- CoinMarketCap API
-- KuCoin API
-- Various blockchain RPC providers
+### Troubleshooting Commands
+- **Test Setup**: Verify all components are working
+- **Run Setup**: Recreate sheets and configuration
+- **Refresh Dashboard**: Update display with latest data
+- **Test Setup**: Validate configuration integrity
 
 ## 📞 Support
 
-For support and questions:
+If you encounter issues:
+1. **Check the logs** in the Progress section
+2. **Run "Test Setup"** to identify problems
+3. **Verify sheet data** manually in Google Sheets
+4. **Check API key configuration** in the ENV sheet
 
-1. Check the troubleshooting section
-2. Review execution logs
-3. Test individual functions
-4. Verify configuration settings
+## 🔒 Security Notes
 
-## 🔄 Version History
-
-- **v1.0.0**: Initial release with multi-network support
-- **v1.1.0**: Added KuCoin integration
-- **v1.2.0**: Enhanced UI and error handling
-- **v1.3.0**: Added TON and Tron support
+- **API keys** are stored in Google Sheets (not recommended for production)
+- **Wallet addresses** are visible in the configuration
+- **Use test wallets** for development and testing
+- **Enable 2FA** on your Google account
 
 ---
 
-**Note**: This tool is designed for educational and personal use. Always verify API keys and test thoroughly before production deployment.
+**Note**: This is a development tool. For production use, consider additional security measures and proper API key management.
