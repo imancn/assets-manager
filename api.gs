@@ -106,7 +106,8 @@ function doGet(e) {
     const html = template.evaluate()
       .setTitle('Assests Manager')
       .setFaviconUrl('https://www.google.com/images/icons/product/sheets-32.png')
-      .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+      .addMetaTag('viewport', 'width=device-width, initial-scale=1')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
     
     return html;
   } catch (error) {
