@@ -15,6 +15,66 @@ const GLOBAL_CONFIG = {
 };
 
 /**
+ * Sanitize headers by masking sensitive values for logging
+ * @param {Object} headers
+ * @returns {Object}
+ */
+function sanitizeHeadersForLog(headers) {
+  try {
+    if (!headers) return {};
+    const sanitized = {};
+    const sensitiveHints = ['key', 'secret', 'token', 'auth', 'passphrase', 'password', 'sign'];
+    for (var name in headers) {
+      if (!Object.prototype.hasOwnProperty.call(headers, name)) continue;
+      var value = headers[name];
+      var lower = String(name).toLowerCase();
+      var isSensitive = false;
+      for (var i = 0; i < sensitiveHints.length; i++) {
+        if (lower.indexOf(sensitiveHints[i]) >= 0) { isSensitive = true; break; }
+      }
+      sanitized[name] = isSensitive ? '***' : String(value);
+    }
+    return sanitized;
+  } catch (e) {
+    return {};
+  }
+}
+
+/**
+ * Wrapper around UrlFetchApp.fetch that logs URL and request headers
+ * @param {string} url
+ * @param {Object} options
+ * @returns {HTTPResponse}
+ */
+function fetchWithLogging(url, options) {
+  var method = (options && options.method) ? options.method : 'GET';
+  var headers = options && options.headers ? options.headers : {};
+  var sanitized = sanitizeHeadersForLog(headers);
+  try {
+    console.log(`[HTTP] ${method} ${url}`);
+    console.log(`[HTTP Headers] ${JSON.stringify(sanitized)}`);
+    var response = UrlFetchApp.fetch(url, options); // keep native call inside wrapper
+    try {
+      console.log(`[HTTP] ${method} ${url} -> ${response.getResponseCode()}`);
+    } catch (e) {}
+    return response;
+  } catch (err) {
+    console.error(`[HTTP ERROR] ${method} ${url}: ${err && err.toString ? err.toString() : err}`);
+    throw err;
+  }
+}
+
+/**
+ * Log a concise view of a financial record prior to append
+ * @param {Object} record
+ */
+function logRecordPreview(record) {
+  try {
+    console.log(`[RECORD] ${record.type} ${record.network}/${record.symbol} addr=${record.address} bal=${record.balance} price=${record.price_usd} value=${record.value_usd}`);
+  } catch (e) {}
+}
+
+/**
  * Main entry point for the web app
  */
 function doGet(e) {
@@ -158,6 +218,9 @@ function fetchAndStoreBalances(triggerType = 'MANUAL') {
         }
         
         // Create financial records for each balance
+        if (!balances || balances.length === 0) {
+          console.log(`No non-zero balances for wallet ${wallet.name} (${wallet.network}). Skipping record creation.`);
+        }
         for (const balance of balances) {
           // Prices map returns objects like { price, market_cap, ... }
           const price = (prices[balance.symbol] && prices[balance.symbol].price)
@@ -186,10 +249,12 @@ function fetchAndStoreBalances(triggerType = 'MANUAL') {
           // Append to Financial Records (unless DRY_RUN is enabled)
           const dryRun = readEnv('DRY_RUN', 'true') === 'true';
           if (!dryRun) {
+            logRecordPreview(record);
             appendFinancialRecord(record);
             summary.fetchedRecords++;
           } else {
-            console.log(`DRY_RUN: Would append record:`, record);
+            console.log(`DRY_RUN: Would append record:`);
+            logRecordPreview(record);
             summary.fetchedRecords++;
           }
         }

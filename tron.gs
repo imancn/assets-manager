@@ -68,7 +68,7 @@ function getTronNativeBalance(address) {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(url, options);
+    const response = fetchWithLogging(url, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {
@@ -149,7 +149,7 @@ function getTronTrc20Balance(address, contractAddress, decimals = 18) {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(url, options);
+    const response = fetchWithLogging(url, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {
@@ -194,7 +194,7 @@ function getTronAccountInfo(address) {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(url, options);
+    const response = fetchWithLogging(url, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {
@@ -248,7 +248,7 @@ function getTronTransactions(address, limit = 20) {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(url, options);
+    const response = fetchWithLogging(url, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {
@@ -290,7 +290,7 @@ function getTronBlockInfo() {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(url, options);
+    const response = fetchWithLogging(url, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {

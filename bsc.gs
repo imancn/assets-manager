@@ -69,7 +69,7 @@ function getBscNativeBalance(address) {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(rpcUrl, options);
+    const response = fetchWithLogging(rpcUrl, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {
@@ -201,7 +201,7 @@ function getBscBep20Balance(address, contractAddress, decimals = 18) {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(rpcUrl, options);
+    const response = fetchWithLogging(rpcUrl, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {
@@ -254,7 +254,7 @@ function getBscGasPrice() {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(rpcUrl, options);
+    const response = fetchWithLogging(rpcUrl, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {
@@ -298,7 +298,7 @@ function getBscBlockNumber() {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(rpcUrl, options);
+    const response = fetchWithLogging(rpcUrl, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {

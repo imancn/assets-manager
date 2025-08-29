@@ -58,7 +58,7 @@ function getBitcoinNativeBalance(address) {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(url, options);
+    const response = fetchWithLogging(url, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {
@@ -98,7 +98,7 @@ function getBitcoinTransactions(address) {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(url, options);
+    const response = fetchWithLogging(url, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {
@@ -131,7 +131,7 @@ function getBitcoinUtxos(address) {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(url, options);
+    const response = fetchWithLogging(url, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {
@@ -163,7 +163,7 @@ function getBitcoinBlockHeight() {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(url, options);
+    const response = fetchWithLogging(url, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {
@@ -196,7 +196,7 @@ function getBitcoinBlockHash(height) {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(url, options);
+    const response = fetchWithLogging(url, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {

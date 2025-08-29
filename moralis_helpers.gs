@@ -37,7 +37,7 @@ function moralisGet(path, query) {
   let lastError = null;
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const response = UrlFetchApp.fetch(url, {
+      const response = fetchWithLogging(url, {
         method: 'GET',
         headers: {
           'X-API-Key': apiKey,
