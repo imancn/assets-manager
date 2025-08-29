@@ -77,7 +77,7 @@ function getKucoinAccounts(wallet) {
   };
   
   try {
-    const response = UrlFetchApp.fetch(`${GLOBAL_CONFIG.KUCOIN_BASE_URL}${endpoint}`, options);
+    const response = UrlFetchApp.fetch(`${getKucoinBaseUrl()}${endpoint}`, options);
     const responseCode = response.getResponseCode();
     const responseText = response.getContentText();
     
@@ -86,9 +86,19 @@ function getKucoinAccounts(wallet) {
       if (data.code === '200000' && data.data) {
         return data.data;
       } else {
+        const msg = String(data.msg || '').toLowerCase();
+        if (msg.indexOf('unavailable in the u.s') >= 0 || msg.indexOf('current area: us') >= 0) {
+          console.warn('KuCoin region-restricted (US). Skipping balances for this account.');
+          return [];
+        }
         throw new Error(`KuCoin API error: ${data.msg || 'Unknown error'}`);
       }
     } else {
+      const msg = String(responseText || '').toLowerCase();
+      if (responseCode === 403 || msg.indexOf('unavailable in the u.s') >= 0 || msg.indexOf('current area: us') >= 0) {
+        console.warn('KuCoin region-restricted (US). Skipping balances for this account.');
+        return [];
+      }
       throw new Error(`KuCoin API HTTP error: ${responseCode} - ${responseText}`);
     }
     
@@ -124,7 +134,7 @@ function getKucoinTokenInfo(currency, wallet) {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(`${GLOBAL_CONFIG.KUCOIN_BASE_URL}${endpoint}`, options);
+    const response = UrlFetchApp.fetch(`${getKucoinBaseUrl()}${endpoint}`, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {
@@ -187,6 +197,17 @@ function createKucoinSignature(method, endpoint, body, timestamp, secret) {
 }
 
 /**
+ * Return KuCoin base URL, optionally from ENV override
+ */
+function getKucoinBaseUrl() {
+  try {
+    const alt = readEnv('KUCOIN_BASE_URL', '');
+    if (alt && alt.indexOf('http') === 0) return alt;
+  } catch (e) {}
+  return GLOBAL_CONFIG.KUCOIN_BASE_URL;
+}
+
+/**
  * Test KuCoin API connection
  * @param {Object} wallet - Wallet configuration object
  * @returns {Object} Test results
@@ -245,7 +266,7 @@ function getKucoinTicker(symbol, wallet) {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(`${GLOBAL_CONFIG.KUCOIN_BASE_URL}${endpoint}`, options);
+    const response = UrlFetchApp.fetch(`${getKucoinBaseUrl()}${endpoint}`, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {
@@ -294,7 +315,7 @@ function getKucoinTradingPairs(wallet) {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(`${GLOBAL_CONFIG.KUCOIN_BASE_URL}${endpoint}`, options);
+    const response = UrlFetchApp.fetch(`${getKucoinBaseUrl()}${endpoint}`, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {
