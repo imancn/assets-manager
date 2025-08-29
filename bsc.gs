@@ -81,6 +81,15 @@ function getBscNativeBalance(address) {
       }
     }
     
+    // Moralis fallback if configured
+    if (isMoralisConfigured()) {
+      try {
+        return moralisGetNativeBalance(address, 'bsc');
+      } catch (moralisError) {
+        console.warn('Moralis BSC native balance fallback failed:', moralisError);
+      }
+    }
+    
     throw new Error(`Failed to get BNB balance: HTTP ${responseCode}`);
     
   } catch (error) {
@@ -103,7 +112,22 @@ function getBscBep20Balances(address, coins) {
   
   for (const coin of bscCoins) {
     try {
-      const balance = getBscBep20Balance(address, coin.contract_address, coin.decimals);
+      let balance = getBscBep20Balance(address, coin.contract_address, coin.decimals);
+      
+      // Moralis symbol-based fallback if direct RPC returned zero
+      if ((!balance || balance === 0) && isMoralisConfigured()) {
+        try {
+          if (coin.contract_address) {
+            balance = moralisGetTokenBalance(address, coin.contract_address, coin.decimals, 'bsc');
+          }
+          if (!balance || balance === 0) {
+            balance = moralisGetTokenBalanceBySymbol(address, coin.symbol, 'bsc');
+          }
+        } catch (e) {
+          console.warn(`Moralis fallback failed for ${coin.symbol} on BSC:`, e);
+        }
+      }
+      
       if (balance > 0) {
         balances.push({
           symbol: coin.symbol,
@@ -116,6 +140,28 @@ function getBscBep20Balances(address, coins) {
     } catch (error) {
       console.warn(`Error getting balance for ${coin.symbol}:`, error);
       // Continue with other tokens
+    }
+  }
+  
+  // Always enumerate via Moralis (if configured) and merge any additional tokens found
+  if (isMoralisConfigured()) {
+    try {
+      const listed = moralisListErc20Balances(address, 'bsc');
+      for (var i = 0; i < listed.length; i++) {
+        var t = listed[i];
+        var already = balances.find(b => b.symbol === t.symbol && (b.contract_address === t.contract_address || !b.contract_address));
+        if (!already) {
+          balances.push({
+            symbol: t.symbol,
+            balance: t.balance,
+            network: 'BSC',
+            contract_address: t.contract_address || '',
+            decimals: t.decimals || 18
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Moralis enumeration for BSC failed:', e);
     }
   }
   
@@ -164,6 +210,15 @@ function getBscBep20Balance(address, contractAddress, decimals = 18) {
         const balanceWei = parseInt(data.result, 16);
         const balance = balanceWei / Math.pow(10, decimals);
         return balance;
+      }
+    }
+    
+    // Moralis fallback if configured
+    if (isMoralisConfigured()) {
+      try {
+        return moralisGetTokenBalance(address, contractAddress, decimals, 'bsc');
+      } catch (moralisError) {
+        console.warn('Moralis BEP20 balance fallback failed:', moralisError);
       }
     }
     

@@ -57,7 +57,7 @@ function getEthNativeBalance(address) {
     if (infuraProjectId && infuraProjectId !== 'YOUR_INFURA_PROJECT_ID_HERE') {
       rpcUrl = `${GLOBAL_CONFIG.INFURA_BASE_URL}/${infuraProjectId}`;
     } else {
-      // Use public RPC as fallback
+      // Use public RPC as fallback first; Moralis as the last resort if configured
       rpcUrl = 'https://eth.llamarpc.com';
     }
     
@@ -89,6 +89,15 @@ function getEthNativeBalance(address) {
       }
     }
     
+    // If standard RPC fails and Moralis is configured, try Moralis
+    if (isMoralisConfigured()) {
+      try {
+        return moralisGetNativeBalance(address, 'eth');
+      } catch (moralisError) {
+        console.warn('Moralis native balance fallback failed:', moralisError);
+      }
+    }
+    
     throw new Error(`Failed to get ETH balance: HTTP ${responseCode}`);
     
   } catch (error) {
@@ -111,7 +120,22 @@ function getEthErc20Balances(address, coins) {
   
   for (const coin of ethCoins) {
     try {
-      const balance = getEthErc20Balance(address, coin.contract_address, coin.decimals);
+      let balance = getEthErc20Balance(address, coin.contract_address, coin.decimals);
+      
+      // Moralis symbol-based fallback if direct RPC returned zero
+      if ((!balance || balance === 0) && isMoralisConfigured()) {
+        try {
+          if (coin.contract_address) {
+            balance = moralisGetTokenBalance(address, coin.contract_address, coin.decimals, 'eth');
+          }
+          if (!balance || balance === 0) {
+            balance = moralisGetTokenBalanceBySymbol(address, coin.symbol, 'eth');
+          }
+        } catch (e) {
+          console.warn(`Moralis fallback failed for ${coin.symbol} on ETH:`, e);
+        }
+      }
+      
       if (balance > 0) {
         balances.push({
           symbol: coin.symbol,
@@ -124,6 +148,28 @@ function getEthErc20Balances(address, coins) {
     } catch (error) {
       console.warn(`Error getting balance for ${coin.symbol}:`, error);
       // Continue with other tokens
+    }
+  }
+  
+  // Always enumerate via Moralis (if configured) and merge any additional tokens found
+  if (isMoralisConfigured()) {
+    try {
+      const listed = moralisListErc20Balances(address, 'eth');
+      for (var i = 0; i < listed.length; i++) {
+        var t = listed[i];
+        var already = balances.find(b => b.symbol === t.symbol && (b.contract_address === t.contract_address || !b.contract_address));
+        if (!already) {
+          balances.push({
+            symbol: t.symbol,
+            balance: t.balance,
+            network: 'ETH',
+            contract_address: t.contract_address || '',
+            decimals: t.decimals || 18
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Moralis enumeration for ETH failed:', e);
     }
   }
   
@@ -180,6 +226,23 @@ function getEthErc20Balance(address, contractAddress, decimals = 18) {
         const balanceWei = parseInt(data.result, 16);
         const balance = balanceWei / Math.pow(10, decimals);
         return balance;
+      }
+    }
+    
+    // Try Moralis fallback for token balances if configured
+    if (isMoralisConfigured()) {
+      try {
+        let amt = 0;
+        if (contractAddress && contractAddress !== '0x0000000000000000000000000000000000000000') {
+          amt = moralisGetTokenBalance(address, contractAddress, decimals, 'eth');
+        }
+        if (!amt || amt === 0) {
+          // As a last resort, try by symbol (requires calling function with symbol)
+          // We don't have symbol here; the higher-level caller will handle symbol-based path.
+        }
+        return amt;
+      } catch (moralisError) {
+        console.warn('Moralis ERC20 balance fallback failed:', moralisError);
       }
     }
     

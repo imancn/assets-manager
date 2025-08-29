@@ -266,6 +266,27 @@ function createFinancialRecordsSheet(ss) {
   console.log('Financial Records sheet created successfully');
 }
 
+// Ensure required sheets exist without deleting existing data
+function ensureCoreSheets() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (!ss.getSheetByName('ENV')) {
+      createEnvSheet(ss);
+    }
+    if (!ss.getSheetByName('Wallets')) {
+      createWalletsSheet(ss);
+    }
+    if (!ss.getSheetByName('Coins Management')) {
+      createCoinsManagementSheet(ss);
+    }
+    if (!ss.getSheetByName('Financial Records')) {
+      createFinancialRecordsSheet(ss);
+    }
+  } catch (err) {
+    console.error('Error ensuring core sheets:', err);
+  }
+}
+
 // Helper function to read environment values
 function readEnv(key, defaultValue = '') {
   const ss = SpreadsheetApp.getActiveSpreadsheet();

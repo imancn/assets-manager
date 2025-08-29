@@ -619,19 +619,35 @@
         }
         
         function loadConfiguration() {
-            // Load configuration from ENV sheet (placeholder)
-            document.getElementById('dry-run-status').textContent = 'Enabled';
-            document.getElementById('dry-run-status').className = 'badge bg-warning';
-            document.getElementById('max-retries').textContent = '3';
-            document.getElementById('duplicate-protection').textContent = 'Enabled';
-            
-            // API status placeholders
-            document.getElementById('cmc-status').textContent = 'Not Configured';
-            document.getElementById('cmc-status').className = 'badge bg-secondary';
-            document.getElementById('kucoin-status').textContent = 'Not Configured';
-            document.getElementById('kucoin-status').className = 'badge bg-secondary';
-            document.getElementById('eth-status').textContent = 'Not Configured';
-            document.getElementById('eth-status').className = 'badge bg-secondary';
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (!result || result.success === false) {
+                        console.error('Failed to load configuration:', result && result.error);
+                        return;
+                    }
+                    // DRY_RUN
+                    document.getElementById('dry-run-status').textContent = result.dryRun ? 'Enabled' : 'Disabled';
+                    document.getElementById('dry-run-status').className = result.dryRun ? 'badge bg-warning' : 'badge bg-success';
+                    // MAX_RETRIES
+                    document.getElementById('max-retries').textContent = String(result.maxRetries);
+                    // DUPLICATE_PROTECTION
+                    document.getElementById('duplicate-protection').textContent = result.duplicateProtection ? 'Enabled' : 'Disabled';
+                    // API statuses
+                    const cmc = result.apiStatus && result.apiStatus.cmc || 'Not Configured';
+                    const kucoin = result.apiStatus && result.apiStatus.kucoin || 'Not Configured';
+                    const eth = result.apiStatus && result.apiStatus.eth || 'Not Configured';
+                    
+                    document.getElementById('cmc-status').textContent = cmc;
+                    document.getElementById('cmc-status').className = 'badge ' + (cmc === 'Configured' ? 'bg-success' : 'bg-secondary');
+                    document.getElementById('kucoin-status').textContent = kucoin;
+                    document.getElementById('kucoin-status').className = 'badge ' + (kucoin === 'Configured' ? 'bg-success' : 'bg-secondary');
+                    document.getElementById('eth-status').textContent = eth;
+                    document.getElementById('eth-status').className = 'badge ' + (eth === 'Not Configured' ? 'bg-secondary' : 'bg-info');
+                })
+                .withFailureHandler(function(error) {
+                    console.error('Error loading configuration:', error);
+                })
+                .getConfigurationSummary();
         }
         
         function runBalanceFetch() {
