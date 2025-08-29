@@ -89,9 +89,21 @@ function fetchAndStoreBalances(triggerType = 'MANUAL') {
     const symbols = [...new Set(coins.map(coin => coin.symbol))];
     console.log(`Fetching prices for ${symbols.length} symbols from CMC`);
     
-    // Fetch CMC prices
-    const prices = fetchCmcPrices(symbols);
-    console.log(`Fetched prices for ${Object.keys(prices).length} symbols`);
+    // Fetch CMC prices with graceful fallback
+    let prices = {};
+    try {
+      prices = fetchCmcPrices(symbols);
+      console.log(`Fetched prices for ${Object.keys(prices).length} symbols`);
+    } catch (cmcError) {
+      console.warn('CMC price fetch failed, falling back to zero prices:', cmcError);
+      try {
+        prices = createZeroPrices(symbols);
+      } catch (fallbackErr) {
+        // If helper is unavailable for any reason, still continue with empty map
+        prices = {};
+      }
+      summary.errors.push(`CMC price fetch failed: ${cmcError.message || cmcError.toString()}`);
+    }
     
     // Process each wallet
     for (const wallet of wallets) {
@@ -199,7 +211,8 @@ function fetchAndStoreBalances(triggerType = 'MANUAL') {
   
   summary.durationMs = Date.now() - startTime;
   summary.endTime = new Date().toISOString();
-  summary.success = summary.errors.length === 0;
+  // Consider run successful if at least one wallet was processed, even with partial errors
+  summary.success = summary.walletsProcessed > 0;
   
   console.log(`Balance fetch completed in ${summary.durationMs}ms. Records: ${summary.fetchedRecords}, Errors: ${summary.errors.length}`);
   
@@ -251,6 +264,48 @@ function getDashboardStats() {
       totalCoins: 0,
       lastSync: { timestamp: '', status: 'Error', formatted: 'Error' }
     };
+  }
+}
+
+/**
+ * Get configuration summary for UI display
+ * @returns {Object}
+ */
+function getConfigurationSummary() {
+  try {
+    const dryRun = readEnv('DRY_RUN', 'true') === 'true';
+    const maxRetries = parseInt(readEnv('MAX_RETRIES', '3')) || 3;
+    const duplicateProtection = readEnv('DUPLICATE_PROTECTION', 'true') === 'true';
+    const cmcKey = readEnv('CMC_API_KEY', '');
+    const moralisKey = readEnv('MORALIS_API_KEY', '');
+    const infuraId = readEnv('INFURA_PROJECT_ID', '');
+    
+    const wallets = readWalletsConfig();
+    const anyKucoin = wallets.some(w => String(w.network).toUpperCase() === 'KUCOIN' && w.api_key && w.api_secret && w.passphrase);
+    
+    let ethStatus = 'Not Configured';
+    if (moralisKey && moralisKey !== 'YOUR_MORALIS_API_KEY_HERE') {
+      ethStatus = 'Moralis';
+    } else if (infuraId && infuraId !== 'YOUR_INFURA_PROJECT_ID_HERE') {
+      ethStatus = 'Infura';
+    } else {
+      ethStatus = 'Public RPC';
+    }
+    
+    return {
+      success: true,
+      dryRun,
+      maxRetries,
+      duplicateProtection,
+      apiStatus: {
+        cmc: (cmcKey && cmcKey !== 'YOUR_CMC_API_KEY_HERE') ? 'Configured' : 'Not Configured',
+        kucoin: anyKucoin ? 'Configured' : 'Not Configured',
+        eth: ethStatus
+      }
+    };
+  } catch (error) {
+    console.error('Error building configuration summary:', error);
+    return { success: false, error: error.toString() };
   }
 }
 

@@ -57,7 +57,7 @@ function getEthNativeBalance(address) {
     if (infuraProjectId && infuraProjectId !== 'YOUR_INFURA_PROJECT_ID_HERE') {
       rpcUrl = `${GLOBAL_CONFIG.INFURA_BASE_URL}/${infuraProjectId}`;
     } else {
-      // Use public RPC as fallback
+      // Use public RPC as fallback first; Moralis as the last resort if configured
       rpcUrl = 'https://eth.llamarpc.com';
     }
     
@@ -86,6 +86,15 @@ function getEthNativeBalance(address) {
         const balanceWei = parseInt(data.result, 16);
         const balanceEth = balanceWei / Math.pow(10, 18);
         return balanceEth;
+      }
+    }
+    
+    // If standard RPC fails and Moralis is configured, try Moralis
+    if (isMoralisConfigured()) {
+      try {
+        return moralisGetNativeBalance(address, 'eth');
+      } catch (moralisError) {
+        console.warn('Moralis native balance fallback failed:', moralisError);
       }
     }
     
@@ -180,6 +189,15 @@ function getEthErc20Balance(address, contractAddress, decimals = 18) {
         const balanceWei = parseInt(data.result, 16);
         const balance = balanceWei / Math.pow(10, decimals);
         return balance;
+      }
+    }
+    
+    // Try Moralis fallback for token balances if configured
+    if (isMoralisConfigured()) {
+      try {
+        return moralisGetTokenBalance(address, contractAddress, decimals, 'eth');
+      } catch (moralisError) {
+        console.warn('Moralis ERC20 balance fallback failed:', moralisError);
       }
     }
     

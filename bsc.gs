@@ -81,6 +81,15 @@ function getBscNativeBalance(address) {
       }
     }
     
+    // Moralis fallback if configured
+    if (isMoralisConfigured()) {
+      try {
+        return moralisGetNativeBalance(address, 'bsc');
+      } catch (moralisError) {
+        console.warn('Moralis BSC native balance fallback failed:', moralisError);
+      }
+    }
+    
     throw new Error(`Failed to get BNB balance: HTTP ${responseCode}`);
     
   } catch (error) {
@@ -164,6 +173,15 @@ function getBscBep20Balance(address, contractAddress, decimals = 18) {
         const balanceWei = parseInt(data.result, 16);
         const balance = balanceWei / Math.pow(10, decimals);
         return balance;
+      }
+    }
+    
+    // Moralis fallback if configured
+    if (isMoralisConfigured()) {
+      try {
+        return moralisGetTokenBalance(address, contractAddress, decimals, 'bsc');
+      } catch (moralisError) {
+        console.warn('Moralis BEP20 balance fallback failed:', moralisError);
       }
     }
     
