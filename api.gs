@@ -135,8 +135,17 @@ function fetchAndStoreBalances(triggerType = 'MANUAL') {
         
         // Create financial records for each balance
         for (const balance of balances) {
-          const price = prices[balance.symbol] || 0;
-          const valueUsd = balance.balance * price;
+          // Prices map returns objects like { price, market_cap, ... }
+          const price = (prices[balance.symbol] && prices[balance.symbol].price)
+            ? prices[balance.symbol].price
+            : 0;
+          // Normalize balance amount across different providers (e.g., KuCoin uses `total`)
+          const amount = (typeof balance.balance === 'number' && !isNaN(balance.balance))
+            ? balance.balance
+            : (typeof balance.total === 'number' && !isNaN(balance.total)
+              ? balance.total
+              : (typeof balance.available === 'number' && !isNaN(balance.available) ? balance.available : 0));
+          const valueUsd = amount * price;
           
           const record = {
             timestamp: new Date().toISOString(),
@@ -144,7 +153,7 @@ function fetchAndStoreBalances(triggerType = 'MANUAL') {
             network: wallet.network,
             symbol: balance.symbol,
             address: wallet.address || wallet.name,
-            balance: balance.balance,
+            balance: amount,
             price_usd: price,
             value_usd: valueUsd,
             status: 'SUCCESS'
