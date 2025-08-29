@@ -136,11 +136,7 @@ function getTronTrc20Balance(address, contractAddress, decimals = 18) {
     const apiKey = readEnv('TRONGRID_API_KEY', '');
     let url;
     
-    if (apiKey && apiKey !== 'YOUR_TRONGRID_API_KEY_HERE') {
-      url = `${GLOBAL_CONFIG.TRONGRID_BASE_URL}/v1/contracts/${contractAddress}/accounts/${address}?api_key=${apiKey}`;
-    } else {
-      url = `${GLOBAL_CONFIG.TRONGRID_BASE_URL}/v1/contracts/${contractAddress}/accounts/${address}`;
-    }
+    url = `${GLOBAL_CONFIG.TRONGRID_BASE_URL}/v1/contracts/${contractAddress}/accounts/${address}`;
     
     const options = {
       method: 'GET',
@@ -150,7 +146,7 @@ function getTronTrc20Balance(address, contractAddress, decimals = 18) {
       muteHttpExceptions: true
     };
     
-    const response = fetchWithLogging(url, options);
+    let response = fetchWithLogging(url, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {
@@ -161,6 +157,20 @@ function getTronTrc20Balance(address, contractAddress, decimals = 18) {
         const balance = parseFloat(tokenData.balance || 0);
         return balance / Math.pow(10, decimals);
       }
+    }
+    // Fallback to tronapi.io public endpoint when TRON grid returns 4xx
+    if (responseCode >= 400 && responseCode < 500) {
+      try {
+        const altUrl = `https://apilist.tronscanapi.com/api/token_trc20/balances?contract=${contractAddress}&address=${address}`;
+        response = fetchWithLogging(altUrl, { method: 'GET', headers: { 'Accept': 'application/json' }, muteHttpExceptions: true });
+        if (response.getResponseCode() === 200) {
+          const j = JSON.parse(response.getContentText());
+          if (j && j.trc20_balances && j.trc20_balances.length) {
+            var v = parseFloat(j.trc20_balances[0].balance || 0);
+            return isNaN(v) ? 0 : v / Math.pow(10, decimals);
+          }
+        }
+      } catch (e) {}
     }
     
     return 0;

@@ -121,14 +121,17 @@ function getEthErc20Balances(address, coins) {
   for (const coin of ethCoins) {
     try {
       let balance = 0;
-      if (coin.contract_address) {
-        balance = getEthErc20Balance(address, coin.contract_address, coin.decimals);
+      // Resolve known bad/missing contract addresses
+      const resolvedContract = resolveEthContractAddress(coin.symbol, coin.contract_address);
+      if (resolvedContract) {
+        addRunLog(`[ETH] Using contract for ${coin.symbol}: ${resolvedContract}`, 'debug');
+        balance = getEthErc20Balance(address, resolvedContract, coin.decimals);
       }
       // Moralis fallbacks
       if ((!balance || balance === 0) && isMoralisConfigured()) {
         try {
-          if (coin.contract_address) {
-            balance = moralisGetTokenBalance(address, coin.contract_address, coin.decimals, 'eth');
+          if (resolvedContract) {
+            balance = moralisGetTokenBalance(address, resolvedContract, coin.decimals, 'eth');
           }
           if ((!balance || balance === 0) && coin.symbol) {
             balance = moralisGetTokenBalanceBySymbol(address, coin.symbol, 'eth');
@@ -142,12 +145,13 @@ function getEthErc20Balances(address, coins) {
         symbol: coin.symbol,
         balance: balance || 0,
         network: 'ETH',
-        contract_address: coin.contract_address,
+        contract_address: resolvedContract || coin.contract_address,
         decimals: coin.decimals
       });
     } catch (error) {
       console.warn(`Error getting balance for ${coin.symbol}:`, error);
-      balances.push({ symbol: coin.symbol, balance: 0, network: 'ETH', contract_address: coin.contract_address, decimals: coin.decimals });
+      const resolvedContract = resolveEthContractAddress(coin.symbol, coin.contract_address);
+      balances.push({ symbol: coin.symbol, balance: 0, network: 'ETH', contract_address: resolvedContract || coin.contract_address, decimals: coin.decimals });
     }
   }
   
@@ -174,6 +178,32 @@ function getEthErc20Balances(address, coins) {
   }
   
   return balances;
+}
+
+/**
+ * Resolve canonical ETH mainnet contract addresses for known tokens when the configured
+ * contract address is missing or clearly invalid. Keeps the provided address when valid.
+ * @param {string} symbol
+ * @param {string} provided
+ * @returns {string}
+ */
+function resolveEthContractAddress(symbol, provided) {
+  try {
+    const isValid = function(addr) {
+      return !!(addr && typeof addr === 'string' && addr.startsWith('0x') && addr.length === 42);
+    };
+    if (isValid(provided)) return provided;
+    const sym = String(symbol || '').toUpperCase();
+    var map = {
+      'USDC': '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606EB48',
+      'USDT': '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+      'WBTC': '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
+      'LINK': '0x514910771AF9Ca656af840dff83E8264EcF986CA'
+    };
+    return map[sym] || provided;
+  } catch (e) {
+    return provided;
+  }
 }
 
 /**

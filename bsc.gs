@@ -113,13 +113,15 @@ function getBscBep20Balances(address, coins) {
   for (const coin of bscCoins) {
     try {
       let balance = 0;
-      if (coin.contract_address) {
-        balance = getBscBep20Balance(address, coin.contract_address, coin.decimals);
+      const resolvedContract = resolveBscContractAddress(coin.symbol, coin.contract_address);
+      if (resolvedContract) {
+        addRunLog(`[BSC] Using contract for ${coin.symbol}: ${resolvedContract}`, 'debug');
+        balance = getBscBep20Balance(address, resolvedContract, coin.decimals);
       }
       if ((!balance || balance === 0) && isMoralisConfigured()) {
         try {
-          if (coin.contract_address) {
-            balance = moralisGetTokenBalance(address, coin.contract_address, coin.decimals, 'bsc');
+          if (resolvedContract) {
+            balance = moralisGetTokenBalance(address, resolvedContract, coin.decimals, 'bsc');
           }
           if ((!balance || balance === 0) && coin.symbol) {
             balance = moralisGetTokenBalanceBySymbol(address, coin.symbol, 'bsc');
@@ -132,12 +134,13 @@ function getBscBep20Balances(address, coins) {
         symbol: coin.symbol,
         balance: balance || 0,
         network: 'BSC',
-        contract_address: coin.contract_address,
+        contract_address: resolvedContract || coin.contract_address,
         decimals: coin.decimals
       });
     } catch (error) {
       console.warn(`Error getting balance for ${coin.symbol}:`, error);
-      balances.push({ symbol: coin.symbol, balance: 0, network: 'BSC', contract_address: coin.contract_address, decimals: coin.decimals });
+      const resolvedContract = resolveBscContractAddress(coin.symbol, coin.contract_address);
+      balances.push({ symbol: coin.symbol, balance: 0, network: 'BSC', contract_address: resolvedContract || coin.contract_address, decimals: coin.decimals });
     }
   }
   
@@ -164,6 +167,26 @@ function getBscBep20Balances(address, coins) {
   }
   
   return balances;
+}
+
+/**
+ * Resolve canonical BSC contract addresses for known tokens when missing/invalid
+ */
+function resolveBscContractAddress(symbol, provided) {
+  try {
+    const isValid = function(addr) {
+      return !!(addr && typeof addr === 'string' && addr.startsWith('0x') && addr.length === 42);
+    };
+    if (isValid(provided)) return provided;
+    const sym = String(symbol || '').toUpperCase();
+    var map = {
+      'BUSD': '0xe9e7cea3dedca5984780bafc599bd69add087d56',
+      'CAKE': '0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82'
+    };
+    return map[sym] || provided;
+  } catch (e) {
+    return provided;
+  }
 }
 
 /**
