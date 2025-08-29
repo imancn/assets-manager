@@ -1,0 +1,313 @@
+/**
+ * bsc.gs - Binance Smart Chain Integration
+ * Handles fetching BSC and BEP20 token balances
+ */
+
+/**
+ * Get BSC balances for an address
+ * @param {string} address - BSC address
+ * @param {Array} coins - Array of coin configurations
+ * @returns {Array} Array of balance objects
+ */
+function getBscBalances(address, coins) {
+  try {
+    if (!address || !address.startsWith('0x')) {
+      throw new Error('Invalid BSC address');
+    }
+    
+    console.log(`Fetching BSC balances for address: ${address}`);
+    
+    const balances = [];
+    
+    // Get native BNB balance
+    const bnbBalance = getBscNativeBalance(address);
+    if (bnbBalance > 0) {
+      balances.push({
+        symbol: 'BNB',
+        balance: bnbBalance,
+        network: 'BSC',
+        contract_address: '0x0000000000000000000000000000000000000000',
+        decimals: 18
+      });
+    }
+    
+    // Get BEP20 token balances
+    const bep20Balances = getBscBep20Balances(address, coins);
+    balances.push(...bep20Balances);
+    
+    console.log(`Found ${balances.length} balances for BSC address ${address}`);
+    return balances;
+    
+  } catch (error) {
+    console.error(`Error fetching BSC balances for ${address}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Get native BNB balance
+ * @param {string} address - BSC address
+ * @returns {number} BNB balance
+ */
+function getBscNativeBalance(address) {
+  try {
+    const rpcUrl = readEnv('BSC_RPC_URL', 'https://bsc-dataseed.binance.org/');
+    
+    const payload = {
+      jsonrpc: '2.0',
+      method: 'eth_getBalance',
+      params: [address, 'latest'],
+      id: 1
+    };
+    
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    };
+    
+    const response = UrlFetchApp.fetch(rpcUrl, options);
+    const responseCode = response.getResponseCode();
+    
+    if (responseCode === 200) {
+      const data = JSON.parse(response.getContentText());
+      if (data.result) {
+        const balanceWei = parseInt(data.result, 16);
+        const balanceBnb = balanceWei / Math.pow(10, 18);
+        return balanceBnb;
+      }
+    }
+    
+    throw new Error(`Failed to get BNB balance: HTTP ${responseCode}`);
+    
+  } catch (error) {
+    console.error('Error getting BSC native balance:', error);
+    return 0;
+  }
+}
+
+/**
+ * Get BEP20 token balances
+ * @param {string} address - BSC address
+ * @param {Array} coins - Array of coin configurations
+ * @returns {Array} Array of BEP20 balance objects
+ */
+function getBscBep20Balances(address, coins) {
+  const balances = [];
+  const bscCoins = coins.filter(coin => coin.network === 'BSC' && coin.contract_address);
+  
+  console.log(`Checking ${bscCoins.length} BEP20 tokens for address ${address}`);
+  
+  for (const coin of bscCoins) {
+    try {
+      const balance = getBscBep20Balance(address, coin.contract_address, coin.decimals);
+      if (balance > 0) {
+        balances.push({
+          symbol: coin.symbol,
+          balance: balance,
+          network: 'BSC',
+          contract_address: coin.contract_address,
+          decimals: coin.decimals
+        });
+      }
+    } catch (error) {
+      console.warn(`Error getting balance for ${coin.symbol}:`, error);
+      // Continue with other tokens
+    }
+  }
+  
+  return balances;
+}
+
+/**
+ * Get single BEP20 token balance
+ * @param {string} address - BSC address
+ * @param {string} contractAddress - BEP20 contract address
+ * @param {number} decimals - Token decimals
+ * @returns {number} Token balance
+ */
+function getBscBep20Balance(address, contractAddress, decimals = 18) {
+  try {
+    const rpcUrl = readEnv('BSC_RPC_URL', 'https://bsc-dataseed.binance.org/');
+    
+    // BEP20 balanceOf function signature: 0x70a08231
+    const data = '0x70a08231' + '000000000000000000000000' + address.slice(2);
+    
+    const payload = {
+      jsonrpc: '2.0',
+      method: 'eth_call',
+      params: [{
+        to: contractAddress,
+        data: data
+      }, 'latest'],
+      id: 1
+    };
+    
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    };
+    
+    const response = UrlFetchApp.fetch(rpcUrl, options);
+    const responseCode = response.getResponseCode();
+    
+    if (responseCode === 200) {
+      const data = JSON.parse(response.getContentText());
+      if (data.result && data.result !== '0x') {
+        const balanceWei = parseInt(data.result, 16);
+        const balance = balanceWei / Math.pow(10, decimals);
+        return balance;
+      }
+    }
+    
+    return 0;
+    
+  } catch (error) {
+    console.error(`Error getting BEP20 balance for ${contractAddress}:`, error);
+    return 0;
+  }
+}
+
+/**
+ * Get BSC gas price
+ * @returns {number} Gas price in Gwei
+ */
+function getBscGasPrice() {
+  try {
+    const rpcUrl = readEnv('BSC_RPC_URL', 'https://bsc-dataseed.binance.org/');
+    
+    const payload = {
+      jsonrpc: '2.0',
+      method: 'eth_gasPrice',
+      params: [],
+      id: 1
+    };
+    
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    };
+    
+    const response = UrlFetchApp.fetch(rpcUrl, options);
+    const responseCode = response.getResponseCode();
+    
+    if (responseCode === 200) {
+      const data = JSON.parse(response.getContentText());
+      if (data.result) {
+        const gasPriceWei = parseInt(data.result, 16);
+        const gasPriceGwei = gasPriceWei / Math.pow(10, 9);
+        return gasPriceGwei;
+      }
+    }
+    
+    throw new Error(`Failed to get gas price: HTTP ${responseCode}`);
+    
+  } catch (error) {
+    console.error('Error getting BSC gas price:', error);
+    return 0;
+  }
+}
+
+/**
+ * Get BSC block number
+ * @returns {number} Current block number
+ */
+function getBscBlockNumber() {
+  try {
+    const rpcUrl = readEnv('BSC_RPC_URL', 'https://bsc-dataseed.binance.org/');
+    
+    const payload = {
+      jsonrpc: '2.0',
+      method: 'eth_blockNumber',
+      params: [],
+      id: 1
+    };
+    
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    };
+    
+    const response = UrlFetchApp.fetch(rpcUrl, options);
+    const responseCode = response.getResponseCode();
+    
+    if (responseCode === 200) {
+      const data = JSON.parse(response.getContentText());
+      if (data.result) {
+        return parseInt(data.result, 16);
+      }
+    }
+    
+    throw new Error(`Failed to get block number: HTTP ${responseCode}`);
+    
+  } catch (error) {
+    console.error('Error getting BSC block number:', error);
+    return 0;
+  }
+}
+
+/**
+ * Test BSC functions
+ * @returns {Object} Test results
+ */
+function testBscFunctions() {
+  try {
+    console.log('Testing BSC functions...');
+    
+    const testAddress = '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6';
+    const result = {
+      success: true,
+      tests: []
+    };
+    
+    // Test 1: Native BNB balance
+    try {
+      const bnbBalance = getBscNativeBalance(testAddress);
+      result.tests.push(`✓ BNB balance: ${bnbBalance} BNB`);
+    } catch (error) {
+      result.tests.push(`✗ BNB balance failed: ${error.toString()}`);
+      result.success = false;
+    }
+    
+    // Test 2: Gas price
+    try {
+      const gasPrice = getBscGasPrice();
+      result.tests.push(`✓ Gas price: ${gasPrice} Gwei`);
+    } catch (error) {
+      result.tests.push(`✗ Gas price failed: ${error.toString()}`);
+      result.success = false;
+    }
+    
+    // Test 3: Block number
+    try {
+      const blockNumber = getBscBlockNumber();
+      result.tests.push(`✓ Block number: ${blockNumber}`);
+    } catch (error) {
+      result.tests.push(`✗ Block number failed: ${error.toString()}`);
+      result.success = false;
+    }
+    
+    return result;
+    
+  } catch (error) {
+    return {
+      success: false,
+      tests: [`✗ BSC test failed: ${error.toString()}`]
+    };
+  }
+}
