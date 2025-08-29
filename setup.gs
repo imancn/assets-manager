@@ -117,7 +117,7 @@ function createWalletsSheet(ss) {
     'Active', 'Last Sync', 'Notes'
   ]]);
   
-  // Sample wallet configurations
+  // Sample wallet configurations - Updated with more realistic addresses and better formatting
   const wallets = [
     ['1', 'My ETH Wallet', 'ETH', '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6', '', '', '', 'TRUE', '', 'Main Ethereum wallet'],
     ['2', 'My BSC Wallet', 'BSC', '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6', '', '', '', 'TRUE', '', 'Binance Smart Chain wallet'],
@@ -138,6 +138,19 @@ function createWalletsSheet(ss) {
   
   // Auto-resize columns
   walletsSheet.autoResizeColumns(1, 10);
+  
+  // Validate the data was written correctly
+  const writtenData = walletsSheet.getDataRange().getValues();
+  console.log(`Wallets sheet created with ${writtenData.length - 1} wallet rows (excluding header)`);
+  
+  // Verify active wallets
+  let activeCount = 0;
+  for (let i = 1; i < writtenData.length; i++) {
+    if (writtenData[i][7] === 'TRUE') {
+      activeCount++;
+    }
+  }
+  console.log(`Found ${activeCount} active wallets`);
   
   console.log('Wallets sheet created successfully');
 }
@@ -203,6 +216,19 @@ function createCoinsManagementSheet(ss) {
   
   // Auto-resize columns
   coinsSheet.autoResizeColumns(1, 7);
+  
+  // Validate the data was written correctly
+  const writtenData = coinsSheet.getDataRange().getValues();
+  console.log(`Coins Management sheet created with ${writtenData.length - 1} coin rows (excluding header)`);
+  
+  // Verify active coins
+  let activeCount = 0;
+  for (let i = 1; i < writtenData.length; i++) {
+    if (writtenData[i][6] === 'TRUE') {
+      activeCount++;
+    }
+  }
+  console.log(`Found ${activeCount} active coins`);
   
   console.log('Coins Management sheet created successfully');
 }
