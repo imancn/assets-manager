@@ -114,40 +114,40 @@ function getEthNativeBalance(address) {
  */
 function getEthErc20Balances(address, coins) {
   const balances = [];
-  const ethCoins = coins.filter(coin => coin.network === 'ETH' && coin.contract_address);
+  const ethCoins = coins.filter(coin => coin.network === 'ETH');
   
   console.log(`Checking ${ethCoins.length} ERC20 tokens for address ${address}`);
   
   for (const coin of ethCoins) {
     try {
-      let balance = getEthErc20Balance(address, coin.contract_address, coin.decimals);
-      
-      // Moralis symbol-based fallback if direct RPC returned zero
+      let balance = 0;
+      if (coin.contract_address) {
+        balance = getEthErc20Balance(address, coin.contract_address, coin.decimals);
+      }
+      // Moralis fallbacks
       if ((!balance || balance === 0) && isMoralisConfigured()) {
         try {
           if (coin.contract_address) {
             balance = moralisGetTokenBalance(address, coin.contract_address, coin.decimals, 'eth');
           }
-          if (!balance || balance === 0) {
+          if ((!balance || balance === 0) && coin.symbol) {
             balance = moralisGetTokenBalanceBySymbol(address, coin.symbol, 'eth');
           }
         } catch (e) {
           console.warn(`Moralis fallback failed for ${coin.symbol} on ETH:`, e);
         }
       }
-      
-      if (balance > 0) {
-        balances.push({
-          symbol: coin.symbol,
-          balance: balance,
-          network: 'ETH',
-          contract_address: coin.contract_address,
-          decimals: coin.decimals
-        });
-      }
+      // Always push entry; default to zero when not found
+      balances.push({
+        symbol: coin.symbol,
+        balance: balance || 0,
+        network: 'ETH',
+        contract_address: coin.contract_address,
+        decimals: coin.decimals
+      });
     } catch (error) {
       console.warn(`Error getting balance for ${coin.symbol}:`, error);
-      // Continue with other tokens
+      balances.push({ symbol: coin.symbol, balance: 0, network: 'ETH', contract_address: coin.contract_address, decimals: coin.decimals });
     }
   }
   

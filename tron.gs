@@ -98,25 +98,26 @@ function getTronNativeBalance(address) {
  */
 function getTronTrc20Balances(address, coins) {
   const balances = [];
-  const tronCoins = coins.filter(coin => coin.network === 'TRX' && coin.contract_address);
+  const tronCoins = coins.filter(coin => coin.network === 'TRX');
   
   console.log(`Checking ${tronCoins.length} TRC20 tokens for address ${address}`);
   
   for (const coin of tronCoins) {
     try {
-      const balance = getTronTrc20Balance(address, coin.contract_address, coin.decimals);
-      if (balance > 0) {
-        balances.push({
-          symbol: coin.symbol,
-          balance: balance,
-          network: 'TRX',
-          contract_address: coin.contract_address,
-          decimals: coin.decimals
-        });
+      let balance = 0;
+      if (coin.contract_address) {
+        balance = getTronTrc20Balance(address, coin.contract_address, coin.decimals);
       }
+      balances.push({
+        symbol: coin.symbol,
+        balance: balance || 0,
+        network: 'TRX',
+        contract_address: coin.contract_address,
+        decimals: coin.decimals
+      });
     } catch (error) {
       console.warn(`Error getting balance for ${coin.symbol}:`, error);
-      // Continue with other tokens
+      balances.push({ symbol: coin.symbol, balance: 0, network: 'TRX', contract_address: coin.contract_address, decimals: coin.decimals });
     }
   }
   

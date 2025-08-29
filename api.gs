@@ -212,6 +212,9 @@ function fetchAndStoreBalances(triggerType = 'MANUAL') {
           case 'BSC':
             balances = getBscBalances(wallet.address, coins);
             break;
+          case 'TRX':
+            balances = getTronBalances(wallet.address, coins);
+            break;
           case 'KUCOIN':
             try {
               balances = getKucoinBalances(wallet);

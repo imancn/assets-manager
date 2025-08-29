@@ -106,40 +106,38 @@ function getBscNativeBalance(address) {
  */
 function getBscBep20Balances(address, coins) {
   const balances = [];
-  const bscCoins = coins.filter(coin => coin.network === 'BSC' && coin.contract_address);
+  const bscCoins = coins.filter(coin => coin.network === 'BSC');
   
   console.log(`Checking ${bscCoins.length} BEP20 tokens for address ${address}`);
   
   for (const coin of bscCoins) {
     try {
-      let balance = getBscBep20Balance(address, coin.contract_address, coin.decimals);
-      
-      // Moralis symbol-based fallback if direct RPC returned zero
+      let balance = 0;
+      if (coin.contract_address) {
+        balance = getBscBep20Balance(address, coin.contract_address, coin.decimals);
+      }
       if ((!balance || balance === 0) && isMoralisConfigured()) {
         try {
           if (coin.contract_address) {
             balance = moralisGetTokenBalance(address, coin.contract_address, coin.decimals, 'bsc');
           }
-          if (!balance || balance === 0) {
+          if ((!balance || balance === 0) && coin.symbol) {
             balance = moralisGetTokenBalanceBySymbol(address, coin.symbol, 'bsc');
           }
         } catch (e) {
           console.warn(`Moralis fallback failed for ${coin.symbol} on BSC:`, e);
         }
       }
-      
-      if (balance > 0) {
-        balances.push({
-          symbol: coin.symbol,
-          balance: balance,
-          network: 'BSC',
-          contract_address: coin.contract_address,
-          decimals: coin.decimals
-        });
-      }
+      balances.push({
+        symbol: coin.symbol,
+        balance: balance || 0,
+        network: 'BSC',
+        contract_address: coin.contract_address,
+        decimals: coin.decimals
+      });
     } catch (error) {
       console.warn(`Error getting balance for ${coin.symbol}:`, error);
-      // Continue with other tokens
+      balances.push({ symbol: coin.symbol, balance: 0, network: 'BSC', contract_address: coin.contract_address, decimals: coin.decimals });
     }
   }
   

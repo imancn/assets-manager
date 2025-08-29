@@ -29,8 +29,18 @@ function moralisGet(path, query) {
   }
   const maxRetries = parseInt(readEnv('MAX_RETRIES', '3')) || 3;
 
-  const qs = query && Object.keys(query).length
-    ? '?' + Object.keys(query).map(k => `${encodeURIComponent(k)}=${encodeURIComponent(String(query[k]))}`).join('&')
+  // Build query string, skipping undefined/empty token_addresses for Moralis (404 otherwise)
+  var querySafe = {};
+  if (query) {
+    for (var k in query) {
+      if (!Object.prototype.hasOwnProperty.call(query, k)) continue;
+      var val = query[k];
+      if (k === 'token_addresses' && (!val || String(val).length < 10)) continue;
+      querySafe[k] = val;
+    }
+  }
+  const qs = Object.keys(querySafe).length
+    ? '?' + Object.keys(querySafe).map(k => `${encodeURIComponent(k)}=${encodeURIComponent(String(querySafe[k]))}`).join('&')
     : '';
   const url = `${GLOBAL_CONFIG.MORALIS_BASE_URL}${path}${qs}`;
 
