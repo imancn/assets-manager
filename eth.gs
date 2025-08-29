@@ -120,7 +120,22 @@ function getEthErc20Balances(address, coins) {
   
   for (const coin of ethCoins) {
     try {
-      const balance = getEthErc20Balance(address, coin.contract_address, coin.decimals);
+      let balance = getEthErc20Balance(address, coin.contract_address, coin.decimals);
+      
+      // Moralis symbol-based fallback if direct RPC returned zero
+      if ((!balance || balance === 0) && isMoralisConfigured()) {
+        try {
+          if (coin.contract_address) {
+            balance = moralisGetTokenBalance(address, coin.contract_address, coin.decimals, 'eth');
+          }
+          if (!balance || balance === 0) {
+            balance = moralisGetTokenBalanceBySymbol(address, coin.symbol, 'eth');
+          }
+        } catch (e) {
+          console.warn(`Moralis fallback failed for ${coin.symbol} on ETH:`, e);
+        }
+      }
+      
       if (balance > 0) {
         balances.push({
           symbol: coin.symbol,
