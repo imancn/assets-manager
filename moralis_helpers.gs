@@ -81,13 +81,38 @@ function moralisGet(path, query) {
 }
 
 /**
+ * Try Moralis with both chain formats: human name (eth/bsc) then hex (0x1/0x38)
+ * @param {string} path
+ * @param {string} chain - 'eth' | 'bsc'
+ * @param {Object} queryExtras
+ */
+function moralisGetWithChainFallback(path, chain, queryExtras) {
+  var primary = chain;
+  var alt = (function(c){
+    var m = { 'eth': '0x1', 'bsc': '0x38' };
+    return m[String(c).toLowerCase()] || c;
+  })(chain);
+  try {
+    var q1 = Object.assign({}, queryExtras || {}, { chain: primary });
+    return moralisGet(path, q1);
+  } catch (e1) {
+    try {
+      var q2 = Object.assign({}, queryExtras || {}, { chain: alt });
+      return moralisGet(path, q2);
+    } catch (e2) {
+      throw e2;
+    }
+  }
+}
+
+/**
  * Get native balance using Moralis
  * @param {string} address
  * @param {string} chain - e.g. 'eth', 'bsc'
  * @returns {number} balance in native units
  */
 function moralisGetNativeBalance(address, chain) {
-  const data = moralisGet(`/address/${address}/balance`, { chain: chain });
+  const data = moralisGetWithChainFallback(`/address/${address}/balance`, chain, {});
   if (!data || typeof data.balance === 'undefined') return 0;
   // Moralis returns balance in wei-like units (for EVM). Derive decimals by chain.
   const decimals = chain === 'bsc' ? 18 : 18; // EVM chains default 18
@@ -104,7 +129,7 @@ function moralisGetNativeBalance(address, chain) {
  * @returns {number}
  */
 function moralisGetTokenBalance(address, tokenAddress, decimals, chain) {
-  const data = moralisGet(`/address/${address}/erc20`, { chain: chain, token_addresses: tokenAddress });
+  const data = moralisGetWithChainFallback(`/address/${address}/erc20`, chain, { token_addresses: tokenAddress });
   if (!data || !data.length || !data[0] || typeof data[0].balance === 'undefined') return 0;
   const raw = data[0].balance;
   const amount = parseFloat(raw) / Math.pow(10, decimals || 18);
@@ -119,7 +144,7 @@ function moralisGetTokenBalance(address, tokenAddress, decimals, chain) {
  * @returns {number}
  */
 function moralisGetTokenBalanceBySymbol(address, symbol, chain) {
-  const data = moralisGet(`/address/${address}/erc20`, { chain: chain });
+  const data = moralisGetWithChainFallback(`/address/${address}/erc20`, chain, {});
   if (!data || !data.length) return 0;
   const token = data.find(t => String(t.symbol).toUpperCase() === String(symbol).toUpperCase());
   if (!token || typeof token.balance === 'undefined') return 0;
@@ -135,7 +160,7 @@ function moralisGetTokenBalanceBySymbol(address, symbol, chain) {
  * @returns {Array<{symbol:string, contract_address:string, decimals:number, balance:number}>}
  */
 function moralisListErc20Balances(address, chain) {
-  const data = moralisGet(`/address/${address}/erc20`, { chain: chain });
+  const data = moralisGetWithChainFallback(`/address/${address}/erc20`, chain, {});
   const results = [];
   if (Array.isArray(data)) {
     for (var i = 0; i < data.length; i++) {
