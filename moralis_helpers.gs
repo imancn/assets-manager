@@ -118,3 +118,30 @@ function moralisGetTokenBalanceBySymbol(address, symbol, chain) {
   return isNaN(amount) ? 0 : amount;
 }
 
+/**
+ * List all ERC20/BEP20 balances for an address using Moralis
+ * @param {string} address
+ * @param {string} chain - 'eth' | 'bsc' | other EVM chain ids supported by Moralis
+ * @returns {Array<{symbol:string, contract_address:string, decimals:number, balance:number}>}
+ */
+function moralisListErc20Balances(address, chain) {
+  const data = moralisGet(`/address/${address}/erc20`, { chain: chain });
+  const results = [];
+  if (Array.isArray(data)) {
+    for (var i = 0; i < data.length; i++) {
+      var t = data[i];
+      var decimals = parseInt(t.decimals) || 18;
+      var amt = parseFloat(t.balance) / Math.pow(10, decimals);
+      if (!isNaN(amt) && amt > 0) {
+        results.push({
+          symbol: t.symbol || 'UNKNOWN',
+          contract_address: t.token_address || t.address || '',
+          decimals: decimals,
+          balance: amt
+        });
+      }
+    }
+  }
+  return results;
+}
+
