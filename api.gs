@@ -14,6 +14,29 @@ const GLOBAL_CONFIG = {
   KUCOIN_BASE_URL: 'https://api.kucoin.com'
 };
 
+// In-memory run logs (reset each run)
+var CURRENT_RUN_LOGS = [];
+
+/**
+ * Append a run log entry (also prints to console)
+ * @param {string} message
+ * @param {'info'|'warn'|'error'|'debug'} level
+ */
+function addRunLog(message, level) {
+  try {
+    var lvl = level || 'info';
+    CURRENT_RUN_LOGS.push({ timestamp: new Date().toISOString(), level: lvl, message: String(message) });
+    var tag = lvl && lvl.toUpperCase ? lvl.toUpperCase() : 'INFO';
+    console.log(`[${tag}] ${message}`);
+  } catch (e) {
+    try { console.log(String(message)); } catch (e2) {}
+  }
+}
+
+function getRunLogs() {
+  return CURRENT_RUN_LOGS.slice();
+}
+
 /**
  * Sanitize headers by masking sensitive values for logging
  * @param {Object} headers
@@ -51,15 +74,15 @@ function fetchWithLogging(url, options) {
   var headers = options && options.headers ? options.headers : {};
   var sanitized = sanitizeHeadersForLog(headers);
   try {
-    console.log(`[HTTP] ${method} ${url}`);
-    console.log(`[HTTP Headers] ${JSON.stringify(sanitized)}`);
+    addRunLog(`[HTTP] ${method} ${url}`, 'debug');
+    addRunLog(`[HTTP Headers] ${JSON.stringify(sanitized)}`, 'debug');
     var response = UrlFetchApp.fetch(url, options); // keep native call inside wrapper
     try {
-      console.log(`[HTTP] ${method} ${url} -> ${response.getResponseCode()}`);
+      addRunLog(`[HTTP] ${method} ${url} -> ${response.getResponseCode()}`, 'debug');
     } catch (e) {}
     return response;
   } catch (err) {
-    console.error(`[HTTP ERROR] ${method} ${url}: ${err && err.toString ? err.toString() : err}`);
+    addRunLog(`[HTTP ERROR] ${method} ${url}: ${err && err.toString ? err.toString() : err}`, 'error');
     throw err;
   }
 }
@@ -113,6 +136,7 @@ function include(filename) {
  */
 function fetchAndStoreBalances(triggerType = 'MANUAL') {
   const startTime = Date.now();
+  CURRENT_RUN_LOGS = [];
   const summary = {
     triggerType,
     startTime: new Date(startTime).toISOString(),
@@ -123,13 +147,13 @@ function fetchAndStoreBalances(triggerType = 'MANUAL') {
   };
   
   try {
-    console.log(`Starting balance fetch for trigger: ${triggerType}`);
+    addRunLog(`Starting balance fetch for trigger: ${triggerType}`, 'info');
     // Ensure required sheets exist at runtime
     ensureCoreSheets();
     
     // Read wallets configuration
     const wallets = readWalletsConfig();
-    console.log(`Read ${wallets.length} wallets from configuration`);
+    addRunLog(`Read ${wallets.length} wallets from configuration`, 'debug');
     
     if (!wallets || wallets.length === 0) {
       const error = 'No active wallets found in configuration. Please run setup first or check Wallets sheet.';
@@ -139,7 +163,7 @@ function fetchAndStoreBalances(triggerType = 'MANUAL') {
     
     // Read coins configuration
     const coins = readCoinsConfig();
-    console.log(`Read ${coins.length} coins from configuration`);
+    addRunLog(`Read ${coins.length} coins from configuration`, 'debug');
     
     if (!coins || coins.length === 0) {
       const error = 'No coins configured in Coins Management. Please run setup first or check Coins Management sheet.';
@@ -149,15 +173,15 @@ function fetchAndStoreBalances(triggerType = 'MANUAL') {
     
     // Get unique symbols for CMC price fetch
     const symbols = [...new Set(coins.map(coin => coin.symbol))];
-    console.log(`Fetching prices for ${symbols.length} symbols from CMC`);
+    addRunLog(`Fetching prices for ${symbols.length} symbols from CMC`, 'info');
     
     // Fetch CMC prices with graceful fallback
     let prices = {};
     try {
       prices = fetchCmcPrices(symbols);
-      console.log(`Fetched prices for ${Object.keys(prices).length} symbols`);
+      addRunLog(`Fetched prices for ${Object.keys(prices).length} symbols`, 'info');
     } catch (cmcError) {
-      console.warn('CMC price fetch failed, falling back to zero prices:', cmcError);
+      addRunLog('CMC price fetch failed, falling back to zero prices: ' + (cmcError && cmcError.toString ? cmcError.toString() : cmcError), 'warn');
       try {
         prices = createZeroPrices(symbols);
       } catch (fallbackErr) {
@@ -170,12 +194,12 @@ function fetchAndStoreBalances(triggerType = 'MANUAL') {
     // Process each wallet
     for (const wallet of wallets) {
       if (wallet.active !== 'TRUE') {
-        console.log(`Skipping inactive wallet: ${wallet.name}`);
+        addRunLog(`Skipping inactive wallet: ${wallet.name}`, 'debug');
         continue;
       }
       
       try {
-        console.log(`Processing wallet: ${wallet.name} (${wallet.network})`);
+        addRunLog(`Processing wallet: ${wallet.name} (${wallet.network})`, 'info');
         
         let balances = [];
         
@@ -213,15 +237,34 @@ function fetchAndStoreBalances(triggerType = 'MANUAL') {
             balances = getTonBalances(wallet.address, coins);
             break;
           default:
-            console.warn(`Unsupported network: ${wallet.network}`);
+            addRunLog(`Unsupported network: ${wallet.network}`, 'warn');
             continue;
         }
         
-        // Create financial records for each balance
-        if (!balances || balances.length === 0) {
-          console.log(`No non-zero balances for wallet ${wallet.name} (${wallet.network}). Skipping record creation.`);
+        // Ensure we have a balance entry for every configured coin on this wallet's network (even 0)
+        var networkCoins = coins.filter(function(c) { return String(c.network).toUpperCase() === String(wallet.network).toUpperCase(); });
+        var bySymbol = {};
+        if (balances && balances.length) {
+          for (var bi = 0; bi < balances.length; bi++) {
+            var b = balances[bi];
+            if (b && b.symbol) bySymbol[String(b.symbol).toUpperCase()] = b;
+          }
         }
-        for (const balance of balances) {
+        for (var ci = 0; ci < networkCoins.length; ci++) {
+          var c = networkCoins[ci];
+          var key = String(c.symbol).toUpperCase();
+          if (!bySymbol[key]) {
+            bySymbol[key] = { symbol: c.symbol, balance: 0, total: 0, available: 0, network: wallet.network, contract_address: c.contract_address, decimals: c.decimals };
+            addRunLog(`Defaulting ${wallet.network}/${c.symbol} for ${wallet.address} to 0 (not found in live balances)`, 'debug');
+          }
+        }
+        var finalBalances = Object.keys(bySymbol).map(function(k) { return bySymbol[k]; });
+        
+        // Create financial records for each balance
+        if (!finalBalances || finalBalances.length === 0) {
+          addRunLog(`No balances available for wallet ${wallet.name} (${wallet.network}).`, 'warn');
+        }
+        for (const balance of finalBalances) {
           // Prices map returns objects like { price, market_cap, ... }
           const price = (prices[balance.symbol] && prices[balance.symbol].price)
             ? prices[balance.symbol].price
@@ -266,7 +309,7 @@ function fetchAndStoreBalances(triggerType = 'MANUAL') {
         
       } catch (walletError) {
         const errorMsg = `Error processing wallet ${wallet.name}: ${walletError.toString()}`;
-        console.error(errorMsg);
+        addRunLog(errorMsg, 'error');
         summary.errors.push(errorMsg);
       }
     }
@@ -281,7 +324,7 @@ function fetchAndStoreBalances(triggerType = 'MANUAL') {
     
   } catch (error) {
     const errorMsg = `Fatal error in fetchAndStoreBalances: ${error.toString()}`;
-    console.error(errorMsg);
+    addRunLog(errorMsg, 'error');
     summary.errors.push(errorMsg);
     writeEnv('LAST_SYNC_STATUS', 'Failed');
   }
@@ -290,8 +333,9 @@ function fetchAndStoreBalances(triggerType = 'MANUAL') {
   summary.endTime = new Date().toISOString();
   // Consider run successful if at least one wallet was processed, even with partial errors
   summary.success = summary.walletsProcessed > 0;
+  summary.logs = getRunLogs();
   
-  console.log(`Balance fetch completed in ${summary.durationMs}ms. Records: ${summary.fetchedRecords}, Errors: ${summary.errors.length}`);
+  addRunLog(`Balance fetch completed in ${summary.durationMs}ms. Records: ${summary.fetchedRecords}, Errors: ${summary.errors.length}`, 'info');
   
   return summary;
 }
