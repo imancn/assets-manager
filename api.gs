@@ -1,0 +1,390 @@
+/**
+ * api.gs - Assests Manager Main API
+ * Handles web app endpoints and orchestrates balance fetching operations
+ */
+
+// Global configuration
+const GLOBAL_CONFIG = {
+  CMC_QUOTES_ENDPOINT: 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest',
+  MORALIS_BASE_URL: 'https://deep-index.moralis.io/api/v2',
+  INFURA_BASE_URL: 'https://mainnet.infura.io/v3',
+  BSC_BASE_URL: 'https://api.bscscan.com/api',
+  SOLSCAN_BASE_URL: 'https://public-api.solscan.io',
+  TRONGRID_BASE_URL: 'https://api.trongrid.io',
+  KUCOIN_BASE_URL: 'https://api.kucoin.com'
+};
+
+/**
+ * Main entry point for the web app
+ */
+function doGet(e) {
+  try {
+    const template = HtmlService.createTemplateFromFile('ui');
+    const html = template.evaluate()
+      .setTitle('Assests Manager')
+      .setFaviconUrl('https://www.google.com/images/icons/product/sheets-32.png')
+      .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+    
+    return html;
+  } catch (error) {
+    console.error('Error in doGet:', error);
+    return HtmlService.createHtmlOutput(`
+      <html>
+        <body>
+          <h1>Error</h1>
+          <p>Failed to load the application: ${error.toString()}</p>
+        </body>
+      </html>
+    `);
+  }
+}
+
+/**
+ * Include HTML files
+ */
+function include(filename) {
+  return HtmlService.createHtmlOutputFromFile(filename).getContent();
+}
+
+/**
+ * Main function to fetch and store balances
+ * @param {string} triggerType - 'MANUAL' or 'SCHEDULE'
+ * @returns {Object} Summary of the operation
+ */
+function fetchAndStoreBalances(triggerType = 'MANUAL') {
+  const startTime = Date.now();
+  const summary = {
+    triggerType,
+    startTime: new Date(startTime).toISOString(),
+    fetchedRecords: 0,
+    errors: [],
+    durationMs: 0,
+    walletsProcessed: 0
+  };
+  
+  try {
+    console.log(`Starting balance fetch for trigger: ${triggerType}`);
+    
+    // Read wallets configuration
+    const wallets = readWalletsConfig();
+    if (!wallets || wallets.length === 0) {
+      throw new Error('No active wallets found in configuration');
+    }
+    
+    // Read coins configuration
+    const coins = readCoinsConfig();
+    if (!coins || coins.length === 0) {
+      throw new Error('No coins configured in Coins Management');
+    }
+    
+    // Get unique symbols for CMC price fetch
+    const symbols = [...new Set(coins.map(coin => coin.symbol))];
+    console.log(`Fetching prices for ${symbols.length} symbols from CMC`);
+    
+    // Fetch CMC prices
+    const prices = fetchCmcPrices(symbols);
+    console.log(`Fetched prices for ${Object.keys(prices).length} symbols`);
+    
+    // Process each wallet
+    for (const wallet of wallets) {
+      if (wallet.active !== 'TRUE') {
+        console.log(`Skipping inactive wallet: ${wallet.name}`);
+        continue;
+      }
+      
+      try {
+        console.log(`Processing wallet: ${wallet.name} (${wallet.network})`);
+        
+        let balances = [];
+        
+        // Fetch balances based on network type
+        switch (wallet.network.toUpperCase()) {
+          case 'ETH':
+            balances = getEthBalances(wallet.address, coins);
+            break;
+          case 'BSC':
+            balances = getBscBalances(wallet.address, coins);
+            break;
+          case 'SOL':
+            balances = getSolanaBalances(wallet.address, coins);
+            break;
+          case 'BTC':
+            balances = getBitcoinBalances(wallet.address, coins);
+            break;
+          case 'XRP':
+            balances = getXrpBalances(wallet.address, coins);
+            break;
+          case 'TON':
+            balances = getTonBalances(wallet.address, coins);
+            break;
+          case 'KUCOIN':
+            balances = getKucoinBalances(wallet);
+            break;
+          default:
+            console.warn(`Unsupported network: ${wallet.network}`);
+            continue;
+        }
+        
+        // Create financial records for each balance
+        for (const balance of balances) {
+          const price = prices[balance.symbol] || 0;
+          const valueUsd = balance.balance * price;
+          
+          const record = {
+            timestamp: new Date().toISOString(),
+            type: 'BALANCE_SNAPSHOT',
+            network: wallet.network,
+            symbol: balance.symbol,
+            address: wallet.address || wallet.name,
+            balance: balance.balance,
+            price_usd: price,
+            value_usd: valueUsd,
+            status: 'SUCCESS'
+          };
+          
+          // Append to Financial Records (unless DRY_RUN is enabled)
+          const dryRun = readEnv('DRY_RUN', 'true') === 'true';
+          if (!dryRun) {
+            appendFinancialRecord(record);
+            summary.fetchedRecords++;
+          } else {
+            console.log(`DRY_RUN: Would append record:`, record);
+            summary.fetchedRecords++;
+          }
+        }
+        
+        summary.walletsProcessed++;
+        
+        // Update wallet last sync
+        updateWalletLastSync(wallet.id, new Date().toISOString());
+        
+      } catch (walletError) {
+        const errorMsg = `Error processing wallet ${wallet.name}: ${walletError.toString()}`;
+        console.error(errorMsg);
+        summary.errors.push(errorMsg);
+      }
+    }
+    
+    // Update last sync timestamp
+    writeEnv('LAST_SYNC_TIMESTAMP', new Date().toISOString());
+    writeEnv('LAST_SYNC_STATUS', 'Success');
+    
+  } catch (error) {
+    const errorMsg = `Fatal error in fetchAndStoreBalances: ${error.toString()}`;
+    console.error(errorMsg);
+    summary.errors.push(errorMsg);
+    writeEnv('LAST_SYNC_STATUS', 'Failed');
+  }
+  
+  summary.durationMs = Date.now() - startTime;
+  summary.endTime = new Date().toISOString();
+  
+  console.log(`Balance fetch completed in ${summary.durationMs}ms. Records: ${summary.fetchedRecords}, Errors: ${summary.errors.length}`);
+  
+  return summary;
+}
+
+/**
+ * Get the last sync information
+ * @returns {Object} Last sync details
+ */
+function getLastSync() {
+  try {
+    const lastSync = readEnv('LAST_SYNC_TIMESTAMP', '');
+    const lastStatus = readEnv('LAST_SYNC_STATUS', 'Never');
+    
+    return {
+      timestamp: lastSync,
+      status: lastStatus,
+      formatted: lastSync ? new Date(lastSync).toLocaleString() : 'Never'
+    };
+  } catch (error) {
+    console.error('Error getting last sync:', error);
+    return { timestamp: '', status: 'Error', formatted: 'Error' };
+  }
+}
+
+/**
+ * Read wallets configuration from the Wallets sheet
+ * @returns {Array} Array of wallet objects
+ */
+function readWalletsConfig() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('Wallets');
+  if (!sheet) return [];
+  
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return [];
+  
+  const wallets = [];
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    if (row[0] && row[7] === 'TRUE') { // Check if ID exists and Active is TRUE
+      wallets.push({
+        id: row[0],
+        name: row[1],
+        network: row[2],
+        address: row[3],
+        api_key: row[4],
+        api_secret: row[5],
+        passphrase: row[6],
+        active: row[7],
+        last_sync: row[8],
+        notes: row[9]
+      });
+    }
+  }
+  
+  return wallets;
+}
+
+/**
+ * Read coins configuration from the Coins Management sheet
+ * @returns {Array} Array of coin objects
+ */
+function readCoinsConfig() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('Coins Management');
+  if (!sheet) return [];
+  
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return [];
+  
+  const coins = [];
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    if (row[0] && row[6] === 'TRUE') { // Check if Symbol exists and Active is TRUE
+      coins.push({
+        symbol: row[0],
+        name: row[1],
+        network: row[2],
+        contract_address: row[3],
+        decimals: parseInt(row[4]) || 18,
+        cmc_id: row[5],
+        active: row[6]
+      });
+    }
+  }
+  
+  return coins;
+}
+
+/**
+ * Update wallet's last sync timestamp
+ * @param {string} walletId - Wallet ID
+ * @param {string} timestamp - ISO timestamp
+ */
+function updateWalletLastSync(walletId, timestamp) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName('Wallets');
+    if (!sheet) return;
+    
+    const data = sheet.getDataRange().getValues();
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][0]) === String(walletId)) {
+        sheet.getRange(i + 1, 9).setValue(timestamp); // Column I (Last Sync)
+        break;
+      }
+    }
+  } catch (error) {
+    console.error(`Error updating wallet ${walletId} last sync:`, error);
+  }
+}
+
+/**
+ * Append a financial record to the Financial Records sheet
+ * @param {Object} record - Record object
+ */
+function appendFinancialRecord(record) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName('Financial Records');
+    if (!sheet) {
+      throw new Error('Financial Records sheet not found');
+    }
+    
+    const row = [
+      record.timestamp,
+      record.type,
+      record.network,
+      record.symbol,
+      record.address,
+      record.balance,
+      record.price_usd,
+      record.value_usd,
+      record.status
+    ];
+    
+    sheet.appendRow(row);
+    console.log(`Appended financial record for ${record.symbol} on ${record.network}`);
+    
+  } catch (error) {
+    console.error('Error appending financial record:', error);
+    throw error;
+  }
+}
+
+/**
+ * Test function to verify the setup
+ * @returns {Object} Test results
+ */
+function testSetup() {
+  try {
+    const result = {
+      success: true,
+      tests: []
+    };
+    
+    // Test 1: Check if sheets exist
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const requiredSheets = ['ENV', 'Wallets', 'Coins Management', 'Financial Records'];
+    
+    for (const sheetName of requiredSheets) {
+      const sheet = ss.getSheetByName(sheetName);
+      if (sheet) {
+        result.tests.push(`✓ ${sheetName} sheet exists`);
+      } else {
+        result.tests.push(`✗ ${sheetName} sheet missing`);
+        result.success = false;
+      }
+    }
+    
+    // Test 2: Check environment variables
+    const envVars = ['CMC_API_KEY', 'DRY_RUN', 'MAX_RETRIES'];
+    for (const envVar of envVars) {
+      const value = readEnv(envVar);
+      if (value !== '') {
+        result.tests.push(`✓ ${envVar} is configured`);
+      } else {
+        result.tests.push(`✗ ${envVar} is not configured`);
+      }
+    }
+    
+    // Test 3: Check wallets configuration
+    const wallets = readWalletsConfig();
+    if (wallets.length > 0) {
+      result.tests.push(`✓ Found ${wallets.length} active wallets`);
+    } else {
+      result.tests.push(`✗ No active wallets found`);
+      result.success = false;
+    }
+    
+    // Test 4: Check coins configuration
+    const coins = readCoinsConfig();
+    if (coins.length > 0) {
+      result.tests.push(`✓ Found ${coins.length} active coins`);
+    } else {
+      result.tests.push(`✗ No active coins found`);
+      result.success = false;
+    }
+    
+    return result;
+    
+  } catch (error) {
+    return {
+      success: false,
+      tests: [`✗ Test failed with error: ${error.toString()}`]
+    };
+  }
+}

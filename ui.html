@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Assests Manager</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #4285f4;
+            --secondary-color: #34a853;
+            --warning-color: #fbbc04;
+            --danger-color: #ea4335;
+            --dark-color: #202124;
+            --light-color: #f8f9fa;
+        }
+        
+        body {
+            background-color: var(--light-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .navbar-brand {
+            font-weight: bold;
+            color: var(--primary-color) !important;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), #5c9eff);
+            color: white;
+            border-radius: 12px 12px 0 0 !important;
+            font-weight: 600;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), #5c9eff);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(66, 133, 244, 0.3);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, var(--secondary-color), #4caf50);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-weight: 600;
+        }
+        
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        
+        .status-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-failed {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-never {
+            background-color: #e2e3e5;
+            color: #383d41;
+        }
+        
+        .progress-area {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .log-entry {
+            padding: 8px 12px;
+            margin: 5px 0;
+            background-color: white;
+            border-radius: 6px;
+            border-left: 3px solid var(--primary-color);
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        .log-entry.error {
+            border-left-color: var(--danger-color);
+            background-color: #fff5f5;
+        }
+        
+        .log-entry.success {
+            border-left-color: var(--secondary-color);
+            background-color: #f0fff4;
+        }
+        
+        .table-responsive {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .table th {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            font-weight: 600;
+        }
+        
+        .table td {
+            vertical-align: middle;
+        }
+        
+        .refresh-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-switch {
+            padding-left: 2.5em;
+        }
+        
+        .form-check-input:checked {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .footer {
+            margin-top: 40px;
+            padding: 20px 0;
+            text-align: center;
+            color: #6c757d;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .btn {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+            
+            .refresh-toggle {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-wallet2 me-2"></i>
+                Assests Manager
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text">
+                    <i class="bi bi-clock me-1"></i>
+                    <span id="current-time"></span>
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Header Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-dashboard me-2"></i>
+                            Dashboard Overview
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-number" id="total-wallets">-</div>
+                                <div class="stat-label">Active Wallets</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number" id="total-coins">-</div>
+                                <div class="stat-label">Supported Coins</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number" id="last-sync-time">-</div>
+                                <div class="stat-label">Last Sync</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number" id="sync-status">-</div>
+                                <div class="stat-label">Status</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Control Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-gear me-2"></i>
+                            Controls
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-6 mb-3">
+                                <button id="run-now-btn" class="btn btn-primary btn-lg me-3">
+                                    <i class="bi bi-play-circle me-2"></i>
+                                    Run Now
+                                </button>
+                                <button id="test-setup-btn" class="btn btn-outline-secondary">
+                                    <i class="bi bi-check-circle me-2"></i>
+                                    Test Setup
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="refresh-toggle">
+                                    <label class="form-check-label fw-bold">Auto-refresh:</label>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="auto-refresh-toggle">
+                                        <label class="form-check-label" for="auto-refresh-toggle">
+                                            <span id="refresh-interval">5 min</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Section -->
+        <div class="row mb-4" id="progress-section" style="display: none;">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-arrow-repeat me-2"></i>
+                            Progress
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="progress-area">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="mb-0">Processing wallets...</h6>
+                                <span id="progress-status">Starting...</span>
+                            </div>
+                            <div class="progress mb-3" style="height: 8px;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                     role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <div id="progress-log" class="mt-3"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Financial Records Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-table me-2"></i>
+                            Recent Financial Records
+                        </h5>
+                        <button id="refresh-records-btn" class="btn btn-sm btn-outline-light">
+                            <i class="bi bi-arrow-clockwise me-1"></i>
+                            Refresh
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="records-table">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Type</th>
+                                        <th>Network</th>
+                                        <th>Symbol</th>
+                                        <th>Address</th>
+                                        <th>Balance</th>
+                                        <th>Price USD</th>
+                                        <th>Value USD</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="records-tbody">
+                                    <tr>
+                                        <td colspan="9" class="text-center text-muted">
+                                            <i class="bi bi-inbox me-2"></i>
+                                            No records found. Run a balance fetch to see data.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuration Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-sliders me-2"></i>
+                            Configuration
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Environment Variables</h6>
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>DRY RUN Mode:</span>
+                                        <span id="dry-run-status" class="badge bg-secondary">Unknown</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Max Retries:</span>
+                                        <span id="max-retries">-</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Duplicate Protection:</span>
+                                        <span id="duplicate-protection">-</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>API Status</h6>
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>CoinMarketCap:</span>
+                                        <span id="cmc-status" class="badge bg-secondary">Unknown</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>KuCoin:</span>
+                                        <span id="kucoin-status" class="badge bg-secondary">Unknown</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Ethereum RPC:</span>
+                                        <span id="eth-status" class="badge bg-secondary">Unknown</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p class="mb-0">
+                <i class="bi bi-code-slash me-1"></i>
+                Assests Manager - Crypto Portfolio Management Tool
+            </p>
+            <small class="text-muted">
+                Built with Google Apps Script • 
+                <a href="#" onclick="showAbout()" class="text-decoration-none">About</a>
+            </small>
+        </div>
+    </footer>
+
+    <!-- About Modal -->
+    <div class="modal fade" id="aboutModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">About Assests Manager</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Assests Manager is a comprehensive cryptocurrency portfolio management tool built with Google Apps Script.</p>
+                    <h6>Features:</h6>
+                    <ul>
+                        <li>Multi-network wallet support (ETH, BSC, SOL, BTC, XRP, TON, TRX)</li>
+                        <li>KuCoin exchange integration</li>
+                        <li>Real-time price data from CoinMarketCap</li>
+                        <li>Automated balance tracking</li>
+                        <li>Financial record management</li>
+                    </ul>
+                    <h6>Supported Networks:</h6>
+                    <p class="small text-muted">Ethereum, Binance Smart Chain, Solana, Bitcoin, XRP, TON, Tron</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Global variables
+        let autoRefreshInterval = null;
+        let isRunning = false;
+        
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            updateCurrentTime();
+            setInterval(updateCurrentTime, 1000);
+        });
+        
+        function initializeApp() {
+            // Load initial data
+            loadDashboardData();
+            loadFinancialRecords();
+            loadConfiguration();
+            
+            // Set up event listeners
+            document.getElementById('run-now-btn').addEventListener('click', runBalanceFetch);
+            document.getElementById('test-setup-btn').addEventListener('click', testSetup);
+            document.getElementById('refresh-records-btn').addEventListener('click', loadFinancialRecords);
+            document.getElementById('auto-refresh-toggle').addEventListener('change', toggleAutoRefresh);
+            
+            // Check auto-refresh setting
+            const autoRefresh = localStorage.getItem('autoRefresh') === 'true';
+            document.getElementById('auto-refresh-toggle').checked = autoRefresh;
+            if (autoRefresh) {
+                startAutoRefresh();
+            }
+        }
+        
+        function updateCurrentTime() {
+            const now = new Date();
+            document.getElementById('current-time').textContent = now.toLocaleTimeString();
+        }
+        
+        function loadDashboardData() {
+            // Load last sync info
+            google.script.run
+                .withSuccessHandler(function(data) {
+                    if (data.timestamp) {
+                        const lastSync = new Date(data.timestamp);
+                        document.getElementById('last-sync-time').textContent = lastSync.toLocaleString();
+                        document.getElementById('sync-status').textContent = data.status;
+                        
+                        // Update status badge
+                        const statusElement = document.getElementById('sync-status');
+                        statusElement.className = 'stat-number';
+                        if (data.status === 'Success') {
+                            statusElement.classList.add('text-success');
+                        } else if (data.status === 'Failed') {
+                            statusElement.classList.add('text-danger');
+                        } else {
+                            statusElement.classList.add('text-muted');
+                        }
+                    } else {
+                        document.getElementById('last-sync-time').textContent = 'Never';
+                        document.getElementById('sync-status').textContent = 'Never';
+                        document.getElementById('sync-status').classList.add('text-muted');
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    console.error('Error loading last sync:', error);
+                    document.getElementById('last-sync-time').textContent = 'Error';
+                    document.getElementById('sync-status').textContent = 'Error';
+                })
+                .getLastSync();
+            
+            // Load wallet and coin counts (placeholder for now)
+            document.getElementById('total-wallets').textContent = '5';
+            document.getElementById('total-coins').textContent = '9';
+        }
+        
+        function loadFinancialRecords() {
+            // This would typically call a function to get the last 10 records
+            // For now, we'll show a placeholder message
+            const tbody = document.getElementById('records-tbody');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="9" class="text-center text-muted">
+                        <i class="bi bi-inbox me-2"></i>
+                        No records found. Run a balance fetch to see data.
+                    </td>
+                </tr>
+            `;
+        }
+        
+        function loadConfiguration() {
+            // Load configuration from ENV sheet (placeholder)
+            document.getElementById('dry-run-status').textContent = 'Enabled';
+            document.getElementById('dry-run-status').className = 'badge bg-warning';
+            document.getElementById('max-retries').textContent = '3';
+            document.getElementById('duplicate-protection').textContent = 'Enabled';
+            
+            // API status placeholders
+            document.getElementById('cmc-status').textContent = 'Not Configured';
+            document.getElementById('cmc-status').className = 'badge bg-secondary';
+            document.getElementById('kucoin-status').textContent = 'Not Configured';
+            document.getElementById('kucoin-status').className = 'badge bg-secondary';
+            document.getElementById('eth-status').textContent = 'Not Configured';
+            document.getElementById('eth-status').className = 'badge bg-secondary';
+        }
+        
+        function runBalanceFetch() {
+            if (isRunning) {
+                return;
+            }
+            
+            isRunning = true;
+            const btn = document.getElementById('run-now-btn');
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = '<span class="loading-spinner me-2"></span>Running...';
+            btn.disabled = true;
+            
+            // Show progress section
+            document.getElementById('progress-section').style.display = 'block';
+            
+            // Clear previous logs
+            document.getElementById('progress-log').innerHTML = '';
+            
+            // Add initial log entry
+            addLogEntry('Starting balance fetch...', 'info');
+            
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    isRunning = false;
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    
+                    if (result.success !== false) {
+                        addLogEntry(`Balance fetch completed successfully!`, 'success');
+                        addLogEntry(`Processed ${result.walletsProcessed} wallets`, 'info');
+                        addLogEntry(`Created ${result.fetchedRecords} records`, 'info');
+                        addLogEntry(`Duration: ${result.durationMs}ms`, 'info');
+                        
+                        if (result.errors && result.errors.length > 0) {
+                            addLogEntry(`Errors encountered: ${result.errors.length}`, 'error');
+                            result.errors.forEach(error => addLogEntry(error, 'error'));
+                        }
+                        
+                        // Update dashboard
+                        loadDashboardData();
+                        loadFinancialRecords();
+                        
+                        // Show success message
+                        showAlert('Balance fetch completed successfully!', 'success');
+                    } else {
+                        addLogEntry('Balance fetch failed!', 'error');
+                        showAlert('Balance fetch failed. Check logs for details.', 'danger');
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    isRunning = false;
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    
+                    addLogEntry(`Error: ${error.toString()}`, 'error');
+                    showAlert('Balance fetch failed. Check logs for details.', 'danger');
+                })
+                .fetchAndStoreBalances('MANUAL');
+        }
+        
+        function testSetup() {
+            const btn = document.getElementById('test-setup-btn');
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = '<span class="loading-spinner me-2"></span>Testing...';
+            btn.disabled = true;
+            
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    
+                    if (result.success) {
+                        showAlert('Setup test passed! All systems are working correctly.', 'success');
+                        console.log('Test results:', result.tests);
+                    } else {
+                        showAlert('Setup test failed. Check console for details.', 'danger');
+                        console.error('Test results:', result.tests);
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    showAlert('Setup test failed. Check console for details.', 'danger');
+                    console.error('Test error:', error);
+                })
+                .testSetup();
+        }
+        
+        function addLogEntry(message, type = 'info') {
+            const logContainer = document.getElementById('progress-log');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            const icon = type === 'error' ? 'bi-exclamation-triangle' : 
+                        type === 'success' ? 'bi-check-circle' : 'bi-info-circle';
+            
+            logEntry.innerHTML = `
+                <i class="bi ${icon} me-2"></i>
+                <span class="text-muted">[${timestamp}]</span>
+                ${message}
+            `;
+            
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        function toggleAutoRefresh() {
+            const isEnabled = document.getElementById('auto-refresh-toggle').checked;
+            localStorage.setItem('autoRefresh', isEnabled);
+            
+            if (isEnabled) {
+                startAutoRefresh();
+            } else {
+                stopAutoRefresh();
+            }
+        }
+        
+        function startAutoRefresh() {
+            const interval = 5 * 60 * 1000; // 5 minutes
+            autoRefreshInterval = setInterval(function() {
+                if (!isRunning) {
+                    addLogEntry('Auto-refresh: Starting scheduled balance fetch...', 'info');
+                    runBalanceFetch();
+                }
+            }, interval);
+        }
+        
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+        
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            const container = document.querySelector('.container');
+            container.insertBefore(alertDiv, container.firstChild);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+        
+        function showAbout() {
+            const modal = new bootstrap.Modal(document.getElementById('aboutModal'));
+            modal.show();
+        }
+    </script>
+</body>
+</html>
