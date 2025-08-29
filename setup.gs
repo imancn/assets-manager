@@ -41,12 +41,30 @@ function createEnvSheet(ss) {
   // Headers
   envSheet.getRange('A1:B1').setValues([['KEY', 'VALUE']]);
   
-  // Configuration values - Updated with all missing configurations
+  // Configuration values - Updated to include all API keys from config text
   const config = [
     // Core API Keys
     ['CMC_API_KEY', 'YOUR_CMC_API_KEY_HERE'],
     ['MORALIS_API_KEY', 'YOUR_MORALIS_API_KEY_HERE'],
     ['INFURA_PROJECT_ID', 'YOUR_INFURA_PROJECT_ID_HERE'],
+    ['TRON_API_KEY', 'YOUR_TRON_API_KEY_HERE'],
+    ['BLOCKFROST_API_KEY', 'YOUR_BLOCKFROST_API_KEY_HERE'],
+    
+    // Blockchain Explorer API Keys
+    ['ETHSCAN_API_KEY', 'YOUR_ETHSCAN_API_KEY_HERE'],
+    ['BSCSCAN_API_KEY', 'YOUR_BSCSCAN_API_KEY_HERE'],
+    ['TRONSCAN_API_KEY', 'YOUR_TRONSCAN_API_KEY_HERE'],
+    ['SOLSCAN_API_KEY', 'YOUR_SOLSCAN_API_KEY_HERE'],
+    ['ADASCAN_API_KEY', 'YOUR_ADASCAN_API_KEY_HERE'],
+    ['BTCSCAN_API_KEY', 'YOUR_BTCSCAN_API_KEY_HERE'],
+    ['XRPSCAN_API_KEY', 'YOUR_XRPSCAN_API_KEY_HERE'],
+    ['TONSCAN_API_KEY', 'YOUR_TONSCAN_API_KEY_HERE'],
+    
+    // Additional Optional Network Keys
+    ['TRONGRID_API_KEY', 'YOUR_TRONGRID_API_KEY_HERE'],
+    ['BLOCKSTREAM_API_KEY', 'YOUR_BLOCKSTREAM_API_KEY_HERE'],
+    ['RIPPLE_API_KEY', 'YOUR_RIPPLE_API_KEY_HERE'],
+    ['TONCENTER_API_KEY', 'YOUR_TONCENTER_API_KEY_HERE'],
     
     // Network RPC URLs
     ['ETH_RPC_URL', 'https://eth.llamarpc.com'],
@@ -55,19 +73,6 @@ function createEnvSheet(ss) {
     ['XRP_RPC_URL', 'https://xrplcluster.com'],
     ['TON_RPC_URL', 'https://toncenter.com/api/v2'],
     ['BTC_RPC_URL', 'https://blockstream.info/api'],
-    
-    // Network-Specific API Keys
-    ['BSCSCAN_API_KEY', 'YOUR_BSCSCAN_API_KEY_HERE'],
-    ['SOLSCAN_API_KEY', 'YOUR_SOLSCAN_API_KEY_HERE'],
-    ['TRONGRID_API_KEY', 'YOUR_TRONGRID_API_KEY_HERE'],
-    ['BLOCKSTREAM_API_KEY', 'YOUR_BLOCKSTREAM_API_KEY_HERE'],
-    ['RIPPLE_API_KEY', 'YOUR_RIPPLE_API_KEY_HERE'],
-    ['TONCENTER_API_KEY', 'YOUR_TONCENTER_API_KEY_HERE'],
-    
-    // Exchange API Keys
-    ['KUCOIN_API_KEY', 'YOUR_KUCOIN_API_KEY_HERE'],
-    ['KUCOIN_SECRET', 'YOUR_KUCOIN_SECRET_HERE'],
-    ['KUCOIN_PASSPHRASE', 'YOUR_KUCOIN_PASSPHRASE_HERE'],
     
     // System Configuration
     ['MAX_RETRIES', '3'],
@@ -117,18 +122,20 @@ function createWalletsSheet(ss) {
     'Active', 'Last Sync', 'Notes'
   ]]);
   
-  // Sample wallet configurations - Updated with more realistic addresses and better formatting
+  // Default wallets and accounts from provided configuration (wallets only live in Wallets sheet)
   const wallets = [
-    ['1', 'My ETH Wallet', 'ETH', '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6', '', '', '', 'TRUE', '', 'Main Ethereum wallet'],
-    ['2', 'My BSC Wallet', 'BSC', '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6', '', '', '', 'TRUE', '', 'Binance Smart Chain wallet'],
-    ['3', 'My KuCoin Account', 'KUCOIN', '', 'YOUR_KUCOIN_API_KEY', 'YOUR_KUCOIN_SECRET', 'YOUR_KUCOIN_PASSPHRASE', 'TRUE', '', 'KuCoin exchange account'],
-    ['4', 'My Solana Wallet', 'SOL', '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM', '', '', '', 'TRUE', '', 'Solana wallet'],
-    ['5', 'My Bitcoin Wallet', 'BTC', 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh', '', '', '', 'TRUE', '', 'Bitcoin wallet'],
-    ['6', 'My XRP Wallet', 'XRP', 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh', '', '', '', 'TRUE', '', 'XRP Ledger wallet'],
-    ['7', 'My TON Wallet', 'TON', 'EQD4FPq-PRDieyQKkizFTRtSDyucUIqrj0v_zXJmqaDp6_0t', '', '', '', 'TRUE', '', 'TON blockchain wallet'],
-    ['8', 'My Tron Wallet', 'TRX', 'TJRabPrwbZy45sbavfcjinPJC18kjpRTv8', '', '', '', 'TRUE', '', 'Tron blockchain wallet'],
-    ['9', 'My Test ETH Wallet', 'ETH', '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6', 'YOUR_MORALIS_API_KEY', '', '', 'TRUE', '', 'Test wallet with Moralis API'],
-    ['10', 'My BSC Test Wallet', 'BSC', '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6', 'YOUR_BSCSCAN_API_KEY', '', '', 'TRUE', '', 'BSC wallet with BSCScan API']
+    // Ethereum
+    ['1', 'ETH_DIRTY', 'ETH', '0x66E35642dd0a0eAaF622c33b99F1a87DaB23E15B', '', '', '', 'TRUE', '', 'Dirty wallet address for Ethereum'],
+    ['2', 'ETH_CLEAN', 'ETH', '0xf96B6397e26173beaBB4ce26215C65b7f590F338', '', '', '', 'TRUE', '', 'Clean wallet address for Ethereum'],
+    // BSC
+    ['3', 'BSC_DIRTY', 'BSC', '0x66E35642dd0a0eAaF622c33b99F1a87DaB23E15B', '', '', '', 'TRUE', '', 'Dirty wallet address for BSC'],
+    ['4', 'BSC_CLEAN', 'BSC', '0xf96B6397e26173beaBB4ce26215C65b7f590F338', '', '', '', 'TRUE', '', 'Clean wallet address for BSC'],
+    // Tron
+    ['5', 'TRX_DIRTY', 'TRX', 'TUDpHcoPZpuwpf6FdyH83b7VCf4FWcHSSm', '', '', '', 'TRUE', '', 'Dirty wallet address for Tron'],
+    ['6', 'TRX_CLEAN', 'TRX', 'TYyzbobn3UXD1PGBwRQ8AHAhm7RHWNUdNC', '', '', '', 'TRUE', '', 'Clean wallet address for Tron'],
+    // KuCoin accounts (credentials live in Wallets sheet)
+    ['7', 'KUCOIN_ACCOUNT1', 'KUCOIN', '', 'YOUR_KUCOIN_ACCOUNT1_API_KEY', 'YOUR_KUCOIN_ACCOUNT1_API_SECRET', 'YOUR_KUCOIN_ACCOUNT1_API_PASSPHRASE', 'TRUE', '', 'KuCoin Account 1'],
+    ['8', 'KUCOIN_ACCOUNT2', 'KUCOIN', '', 'YOUR_KUCOIN_ACCOUNT2_API_KEY', 'YOUR_KUCOIN_ACCOUNT2_API_SECRET', 'YOUR_KUCOIN_ACCOUNT2_API_PASSPHRASE', 'TRUE', '', 'KuCoin Account 2']
   ];
   
   walletsSheet.getRange(2, 1, wallets.length, wallets[0].length).setValues(wallets);
