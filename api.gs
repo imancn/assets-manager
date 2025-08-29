@@ -173,9 +173,13 @@ function fetchAndStoreBalances(triggerType = 'MANUAL') {
       }
     }
     
-    // Update last sync timestamp
+    // Update last sync timestamp and status based on errors
     writeEnv('LAST_SYNC_TIMESTAMP', new Date().toISOString());
-    writeEnv('LAST_SYNC_STATUS', 'Success');
+    if (summary.errors.length === 0) {
+      writeEnv('LAST_SYNC_STATUS', 'Success');
+    } else {
+      writeEnv('LAST_SYNC_STATUS', 'Failed');
+    }
     
   } catch (error) {
     const errorMsg = `Fatal error in fetchAndStoreBalances: ${error.toString()}`;
@@ -186,6 +190,7 @@ function fetchAndStoreBalances(triggerType = 'MANUAL') {
   
   summary.durationMs = Date.now() - startTime;
   summary.endTime = new Date().toISOString();
+  summary.success = summary.errors.length === 0;
   
   console.log(`Balance fetch completed in ${summary.durationMs}ms. Records: ${summary.fetchedRecords}, Errors: ${summary.errors.length}`);
   
@@ -260,28 +265,51 @@ function readWalletsConfig() {
       console.log('Wallets sheet has no data rows');
       return [];
     }
-    
+    // Build header index map for resilience to column order changes
+    const headers = data[0].map(h => String(h).trim());
+    const indexOf = (name) => headers.findIndex(h => h.toLowerCase() === String(name).toLowerCase());
+    const idIdx = indexOf('ID');
+    const nameIdx = indexOf('Name');
+    const networkIdx = indexOf('Network');
+    const addressIdx = indexOf('Address');
+    const apiKeyIdx = indexOf('API_KEY');
+    const apiSecretIdx = indexOf('API_SECRET');
+    const passphraseIdx = indexOf('PASSPHRASE');
+    const activeIdx = indexOf('Active');
+    const lastSyncIdx = indexOf('Last Sync');
+    const notesIdx = indexOf('Notes');
+
+    const isTrue = (val) => {
+      if (val === true) return true;
+      const normalized = String(val).trim().toUpperCase();
+      return normalized === 'TRUE' || normalized === 'YES' || normalized === '1';
+    };
+
     const wallets = [];
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
-      console.log(`Row ${i}: ID=${row[0]}, Active=${row[7]}, Active type=${typeof row[7]}`);
-      
-      if (row[0] && row[7] === 'TRUE') { // Check if ID exists and Active is TRUE
-        wallets.push({
-          id: row[0],
-          name: row[1],
-          network: row[2],
-          address: row[3],
-          api_key: row[4],
-          api_secret: row[5],
-          passphrase: row[6],
-          active: row[7],
-          last_sync: row[8],
-          notes: row[9]
-        });
+      const activeVal = activeIdx >= 0 ? row[activeIdx] : undefined;
+      console.log(`Row ${i}: Active=${activeVal}, Active type=${typeof activeVal}`);
+      if (!isTrue(activeVal)) {
+        continue;
       }
+
+      const wallet = {
+        id: idIdx >= 0 && row[idIdx] ? row[idIdx] : String(i),
+        name: nameIdx >= 0 ? row[nameIdx] : `Wallet ${i}`,
+        network: networkIdx >= 0 ? row[networkIdx] : '',
+        address: addressIdx >= 0 ? row[addressIdx] : '',
+        api_key: apiKeyIdx >= 0 ? row[apiKeyIdx] : '',
+        api_secret: apiSecretIdx >= 0 ? row[apiSecretIdx] : '',
+        passphrase: passphraseIdx >= 0 ? row[passphraseIdx] : '',
+        active: 'TRUE',
+        last_sync: lastSyncIdx >= 0 ? row[lastSyncIdx] : '',
+        notes: notesIdx >= 0 ? row[notesIdx] : ''
+      };
+
+      wallets.push(wallet);
     }
-    
+
     console.log(`Found ${wallets.length} active wallets`);
     return wallets;
     
@@ -311,25 +339,43 @@ function readCoinsConfig() {
       console.log('Coins Management sheet has no data rows');
       return [];
     }
-    
+    // Build header index map for resilience to column order changes
+    const headers = data[0].map(h => String(h).trim());
+    const indexOf = (name) => headers.findIndex(h => h.toLowerCase() === String(name).toLowerCase());
+    const symbolIdx = indexOf('Symbol');
+    const nameIdx = indexOf('Name');
+    const networkIdx = indexOf('Network');
+    const contractIdx = indexOf('Contract Address');
+    const decimalsIdx = indexOf('Decimals');
+    const cmcIdIdx = indexOf('CMC ID');
+    const activeIdx = indexOf('Active');
+
+    const isTrue = (val) => {
+      if (val === true) return true;
+      const normalized = String(val).trim().toUpperCase();
+      return normalized === 'TRUE' || normalized === 'YES' || normalized === '1';
+    };
+
     const coins = [];
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
-      console.log(`Row ${i}: Symbol=${row[0]}, Active=${row[6]}, Active type=${typeof row[6]}`);
-      
-      if (row[0] && row[6] === 'TRUE') { // Check if Symbol exists and Active is TRUE
-        coins.push({
-          symbol: row[0],
-          name: row[1],
-          network: row[2],
-          contract_address: row[3],
-          decimals: parseInt(row[4]) || 18,
-          cmc_id: row[5],
-          active: row[6]
-        });
+      const symbol = symbolIdx >= 0 ? row[symbolIdx] : row[0];
+      const activeVal = activeIdx >= 0 ? row[activeIdx] : undefined;
+      console.log(`Row ${i}: Symbol=${symbol}, Active=${activeVal}, Active type=${typeof activeVal}`);
+      if (!symbol || !isTrue(activeVal)) {
+        continue;
       }
+      coins.push({
+        symbol: symbol,
+        name: nameIdx >= 0 ? row[nameIdx] : '',
+        network: networkIdx >= 0 ? row[networkIdx] : '',
+        contract_address: contractIdx >= 0 ? row[contractIdx] : '',
+        decimals: parseInt(decimalsIdx >= 0 ? row[decimalsIdx] : 18) || 18,
+        cmc_id: cmcIdIdx >= 0 ? row[cmcIdIdx] : '',
+        active: 'TRUE'
+      });
     }
-    
+
     console.log(`Found ${coins.length} active coins`);
     return coins;
     
