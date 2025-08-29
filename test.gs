@@ -59,7 +59,7 @@ function testWallets() {
       const row = data[i];
       if (row[0]) { // Has ID
         totalCount++;
-        if (row[7] === 'TRUE') { // Is active
+        if (isTrueValue(row[7])) { // Is active
           activeCount++;
           console.log(`✓ Active: ${row[1]} (${row[2]})`);
         } else {
@@ -112,7 +112,7 @@ function testCoins() {
       const row = data[i];
       if (row[0]) { // Has symbol
         totalCount++;
-        if (row[6] === 'TRUE') { // Is active
+        if (isTrueValue(row[6])) { // Is active
           activeCount++;
           console.log(`✓ Active: ${row[0]} (${row[2]})`);
         } else {
@@ -231,6 +231,15 @@ function runAllTests() {
 }
 
 /**
+ * Helper to normalize boolean-ish values from Sheets
+ */
+function isTrueValue(val) {
+  if (val === true) return true;
+  const normalized = String(val).trim().toUpperCase();
+  return normalized === 'TRUE' || normalized === 'YES' || normalized === '1';
+}
+
+/**
  * Helper function to read environment values
  */
 function readEnv(key, defaultValue = '') {
@@ -253,7 +262,7 @@ function readEnv(key, defaultValue = '') {
 /**
  * Helper function to read wallets configuration
  */
-function readWalletsConfig() {
+function readWalletsConfigForTests() {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = ss.getSheetByName('Wallets');
@@ -286,7 +295,7 @@ function readWalletsConfig() {
 /**
  * Helper function to read coins configuration
  */
-function readCoinsConfig() {
+function readCoinsConfigForTests() {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = ss.getSheetByName('Coins Management');

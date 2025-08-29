@@ -36,6 +36,7 @@ function getKucoinBalances(wallet) {
           available: parseFloat(account.available) || 0,
           hold: parseFloat(account.hold) || 0,
           total: parseFloat(account.balance) || 0,
+          balance: parseFloat(account.balance) || 0, // For aggregator compatibility
           network: 'KUCOIN',
           token_info: tokenInfo
         });
