@@ -44,21 +44,21 @@ function createEnvSheet(ss) {
   // Configuration values - Updated to include all API keys from config text
   const config = [
     // Core API Keys
-    ['CMC_API_KEY', 'YOUR_CMC_API_KEY_HERE'],
-    ['MORALIS_API_KEY', 'YOUR_MORALIS_API_KEY_HERE'],
+    ['CMC_API_KEY', 'e3d2cce1-758b-490d-848a-6123d5473d3d'],
+    ['MORALIS_API_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjE3NmI0ZjU3LTA4ZmItNGJlMy04NjYyLWRiODU2Y2ViN2E1NyIsIm9yZ0lkIjoiNDY2NzI4IiwidXNlcklkIjoiNDgwMTYxIiwidHlwZUlkIjoiOGMxNGI3YTktMmZlZS00NDVlLWIyZjktZDFmMWQyZjQ3OWQwIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE3NTU5MzcwMzksImV4cCI6NDkxMTY5NzAzOX0.OnDYZNw983she_yNBpMtW_CY1muJw13QWrrX6qDjPxg'],
     ['INFURA_PROJECT_ID', 'YOUR_INFURA_PROJECT_ID_HERE'],
-    ['TRON_API_KEY', 'YOUR_TRON_API_KEY_HERE'],
-    ['BLOCKFROST_API_KEY', 'YOUR_BLOCKFROST_API_KEY_HERE'],
+    ['TRON_API_KEY', ''],
+    ['BLOCKFROST_API_KEY', ''],
     
     // Blockchain Explorer API Keys
-    ['ETHSCAN_API_KEY', 'YOUR_ETHSCAN_API_KEY_HERE'],
-    ['BSCSCAN_API_KEY', 'YOUR_BSCSCAN_API_KEY_HERE'],
-    ['TRONSCAN_API_KEY', 'YOUR_TRONSCAN_API_KEY_HERE'],
-    ['SOLSCAN_API_KEY', 'YOUR_SOLSCAN_API_KEY_HERE'],
-    ['ADASCAN_API_KEY', 'YOUR_ADASCAN_API_KEY_HERE'],
-    ['BTCSCAN_API_KEY', 'YOUR_BTCSCAN_API_KEY_HERE'],
-    ['XRPSCAN_API_KEY', 'YOUR_XRPSCAN_API_KEY_HERE'],
-    ['TONSCAN_API_KEY', 'YOUR_TONSCAN_API_KEY_HERE'],
+    ['ETHSCAN_API_KEY', ''],
+    ['BSCSCAN_API_KEY', ''],
+    ['TRONSCAN_API_KEY', ''],
+    ['SOLSCAN_API_KEY', ''],
+    ['ADASCAN_API_KEY', ''],
+    ['BTCSCAN_API_KEY', ''],
+    ['XRPSCAN_API_KEY', ''],
+    ['TONSCAN_API_KEY', ''],
     
     // Additional Optional Network Keys
     ['TRONGRID_API_KEY', 'YOUR_TRONGRID_API_KEY_HERE'],
@@ -133,9 +133,9 @@ function createWalletsSheet(ss) {
     // Tron
     ['5', 'TRX_DIRTY', 'TRX', 'TUDpHcoPZpuwpf6FdyH83b7VCf4FWcHSSm', '', '', '', 'TRUE', '', 'Dirty wallet address for Tron'],
     ['6', 'TRX_CLEAN', 'TRX', 'TYyzbobn3UXD1PGBwRQ8AHAhm7RHWNUdNC', '', '', '', 'TRUE', '', 'Clean wallet address for Tron'],
-    // KuCoin accounts (credentials live in Wallets sheet)
-    ['7', 'KUCOIN_ACCOUNT1', 'KUCOIN', '', 'YOUR_KUCOIN_ACCOUNT1_API_KEY', 'YOUR_KUCOIN_ACCOUNT1_API_SECRET', 'YOUR_KUCOIN_ACCOUNT1_API_PASSPHRASE', 'TRUE', '', 'KuCoin Account 1'],
-    ['8', 'KUCOIN_ACCOUNT2', 'KUCOIN', '', 'YOUR_KUCOIN_ACCOUNT2_API_KEY', 'YOUR_KUCOIN_ACCOUNT2_API_SECRET', 'YOUR_KUCOIN_ACCOUNT2_API_PASSPHRASE', 'TRUE', '', 'KuCoin Account 2']
+    // KuCoin accounts (credentials from provided configuration)
+    ['7', 'KUCOIN_ACCOUNT1', 'KUCOIN', '', '68a5f274d12f8b0001f035fc', 'bfd14289-e533-4223-b931-5c155eb45b33', 'w3dLrUJ0XVpE6K', 'TRUE', '', 'KuCoin Account 1'],
+    ['8', 'KUCOIN_ACCOUNT2', 'KUCOIN', '', '68a5ed6354d535000172c30e', 'fa72eb3a-a403-4472-badb-dc9cc2e3d575', 'q@poCkj25l#px27', 'TRUE', '', 'KuCoin Account 2']
   ];
   
   walletsSheet.getRange(2, 1, wallets.length, wallets[0].length).setValues(wallets);
