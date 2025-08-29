@@ -80,7 +80,7 @@ function fetchCmcBatch(symbols, apiKey, maxRetries) {
       
       console.log(`CMC API request attempt ${attempt}/${maxRetries} for ${symbols.length} symbols`);
       
-      const response = UrlFetchApp.fetch(url, options);
+      const response = fetchWithLogging(url, options);
       const responseCode = response.getResponseCode();
       const responseText = response.getContentText();
       
