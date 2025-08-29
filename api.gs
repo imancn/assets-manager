@@ -64,6 +64,8 @@ function fetchAndStoreBalances(triggerType = 'MANUAL') {
   
   try {
     console.log(`Starting balance fetch for trigger: ${triggerType}`);
+    // Ensure required sheets exist at runtime
+    ensureCoreSheets();
     
     // Read wallets configuration
     const wallets = readWalletsConfig();
@@ -491,7 +493,7 @@ function appendFinancialRecord(record) {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = ss.getSheetByName('Financial Records');
     if (!sheet) {
-      throw new Error('Financial Records sheet not found');
+      createFinancialRecordsSheet(ss);
     }
     
     const row = [
