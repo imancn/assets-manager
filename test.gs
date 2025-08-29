@@ -59,7 +59,7 @@ function testWallets() {
       const row = data[i];
       if (row[0]) { // Has ID
         totalCount++;
-        if (row[7] === 'TRUE') { // Is active
+        if (row[7] === true || row[7] === 'TRUE') { // Is active
           activeCount++;
           console.log(`✓ Active: ${row[1]} (${row[2]})`);
         } else {
@@ -112,7 +112,7 @@ function testCoins() {
       const row = data[i];
       if (row[0]) { // Has symbol
         totalCount++;
-        if (row[6] === 'TRUE') { // Is active
+        if (row[6] === true || row[6] === 'TRUE') { // Is active
           activeCount++;
           console.log(`✓ Active: ${row[0]} (${row[2]})`);
         } else {
@@ -265,7 +265,7 @@ function readWalletsConfig() {
     const wallets = [];
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
-      if (row[0] && row[7] === 'TRUE') {
+      if (row[0] && (row[7] === true || row[7] === 'TRUE')) {
         wallets.push({
           id: row[0],
           name: row[1],
@@ -298,7 +298,7 @@ function readCoinsConfig() {
     const coins = [];
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
-      if (row[0] && row[6] === 'TRUE') {
+      if (row[0] && (row[6] === true || row[6] === 'TRUE')) {
         coins.push({
           symbol: row[0],
           name: row[1],
