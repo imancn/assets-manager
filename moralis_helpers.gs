@@ -101,3 +101,20 @@ function moralisGetTokenBalance(address, tokenAddress, decimals, chain) {
   return isNaN(amount) ? 0 : amount;
 }
 
+/**
+ * Attempt to find token balance by symbol (when contract address is missing/invalid)
+ * @param {string} address
+ * @param {string} symbol
+ * @param {string} chain
+ * @returns {number}
+ */
+function moralisGetTokenBalanceBySymbol(address, symbol, chain) {
+  const data = moralisGet(`/address/${address}/erc20`, { chain: chain });
+  if (!data || !data.length) return 0;
+  const token = data.find(t => String(t.symbol).toUpperCase() === String(symbol).toUpperCase());
+  if (!token || typeof token.balance === 'undefined') return 0;
+  const decimals = parseInt(token.decimals) || 18;
+  const amount = parseFloat(token.balance) / Math.pow(10, decimals);
+  return isNaN(amount) ? 0 : amount;
+}
+

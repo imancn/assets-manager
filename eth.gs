@@ -195,7 +195,15 @@ function getEthErc20Balance(address, contractAddress, decimals = 18) {
     // Try Moralis fallback for token balances if configured
     if (isMoralisConfigured()) {
       try {
-        return moralisGetTokenBalance(address, contractAddress, decimals, 'eth');
+        let amt = 0;
+        if (contractAddress && contractAddress !== '0x0000000000000000000000000000000000000000') {
+          amt = moralisGetTokenBalance(address, contractAddress, decimals, 'eth');
+        }
+        if (!amt || amt === 0) {
+          // As a last resort, try by symbol (requires calling function with symbol)
+          // We don't have symbol here; the higher-level caller will handle symbol-based path.
+        }
+        return amt;
       } catch (moralisError) {
         console.warn('Moralis ERC20 balance fallback failed:', moralisError);
       }
