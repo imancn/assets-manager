@@ -143,21 +143,24 @@ function getBscBep20Balances(address, coins) {
     }
   }
   
-  // If no BEP20 balances found yet and Moralis is configured, enumerate tokens via Moralis
-  if (balances.filter(b => b.symbol !== 'BNB').length === 0 && isMoralisConfigured()) {
+  // Always enumerate via Moralis (if configured) and merge any additional tokens found
+  if (isMoralisConfigured()) {
     try {
       const listed = moralisListErc20Balances(address, 'bsc');
       for (var i = 0; i < listed.length; i++) {
         var t = listed[i];
         var known = coins.find(c => c.network === 'BSC' && String(c.symbol).toUpperCase() === String(t.symbol).toUpperCase());
         if (known) {
-          balances.push({
-            symbol: known.symbol,
-            balance: t.balance,
-            network: 'BSC',
-            contract_address: t.contract_address || known.contract_address,
-            decimals: known.decimals || t.decimals
-          });
+          var already = balances.find(b => b.symbol === known.symbol);
+          if (!already) {
+            balances.push({
+              symbol: known.symbol,
+              balance: t.balance,
+              network: 'BSC',
+              contract_address: t.contract_address || known.contract_address,
+              decimals: known.decimals || t.decimals
+            });
+          }
         }
       }
     } catch (e) {
