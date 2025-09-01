@@ -682,6 +682,12 @@
                         addLogEntry(`Processed ${result.walletsProcessed} wallets`, 'info');
                         addLogEntry(`Created ${result.fetchedRecords} records`, 'info');
                         addLogEntry(`Duration: ${result.durationMs}ms`, 'info');
+                        if (Array.isArray(result.logs)) {
+                            result.logs.forEach(function(l){
+                                const level = (l.level === 'error') ? 'error' : (l.level === 'warn' ? 'warning' : 'info');
+                                addLogEntry(l.message, level);
+                            });
+                        }
                         
                         if (result.errors && result.errors.length > 0) {
                             addLogEntry(`Errors encountered: ${result.errors.length}`, 'error');

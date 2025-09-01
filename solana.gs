@@ -69,7 +69,7 @@ function getSolanaNativeBalance(address) {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(rpcUrl, options);
+    const response = fetchWithLogging(rpcUrl, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {
@@ -128,7 +128,7 @@ function getSolanaSplBalances(address, coins) {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(rpcUrl, options);
+    const response = fetchWithLogging(rpcUrl, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {
@@ -195,7 +195,7 @@ function getSolanaBlockHeight() {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(rpcUrl, options);
+    const response = fetchWithLogging(rpcUrl, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {
@@ -237,7 +237,7 @@ function getSolanaSlot() {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(rpcUrl, options);
+    const response = fetchWithLogging(rpcUrl, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {

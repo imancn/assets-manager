@@ -70,7 +70,7 @@ function getXrpNativeBalance(address) {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(rpcUrl, options);
+    const response = fetchWithLogging(rpcUrl, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {
@@ -123,7 +123,7 @@ function getXrpTokenBalances(address, coins) {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(rpcUrl, options);
+    const response = fetchWithLogging(rpcUrl, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {
@@ -187,7 +187,7 @@ function getXrpTransactions(address, limit = 20) {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(rpcUrl, options);
+    const response = fetchWithLogging(rpcUrl, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {
@@ -230,7 +230,7 @@ function getXrpLedgerInfo() {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(rpcUrl, options);
+    const response = fetchWithLogging(rpcUrl, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {
@@ -277,7 +277,7 @@ function getXrpServerInfo() {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(rpcUrl, options);
+    const response = fetchWithLogging(rpcUrl, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {

@@ -62,7 +62,7 @@ function getTonNativeBalance(address) {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(url, options);
+    const response = fetchWithLogging(url, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {
@@ -104,7 +104,7 @@ function getTonJettonBalances(address, coins) {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(url, options);
+    const response = fetchWithLogging(url, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {
@@ -161,7 +161,7 @@ function getTonAccountInfo(address) {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(url, options);
+    const response = fetchWithLogging(url, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {
@@ -206,7 +206,7 @@ function getTonTransactions(address, limit = 20) {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(url, options);
+    const response = fetchWithLogging(url, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {
@@ -241,7 +241,7 @@ function getTonBlockInfo() {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(url, options);
+    const response = fetchWithLogging(url, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {

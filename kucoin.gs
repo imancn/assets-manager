@@ -77,7 +77,7 @@ function getKucoinAccounts(wallet) {
   };
   
   try {
-    const response = UrlFetchApp.fetch(`${getKucoinBaseUrl()}${endpoint}`, options);
+    const response = fetchWithLogging(`${getKucoinBaseUrl()}${endpoint}`, options);
     const responseCode = response.getResponseCode();
     const responseText = response.getContentText();
     
@@ -134,7 +134,7 @@ function getKucoinTokenInfo(currency, wallet) {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(`${getKucoinBaseUrl()}${endpoint}`, options);
+    const response = fetchWithLogging(`${getKucoinBaseUrl()}${endpoint}`, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {
@@ -266,7 +266,7 @@ function getKucoinTicker(symbol, wallet) {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(`${getKucoinBaseUrl()}${endpoint}`, options);
+    const response = fetchWithLogging(`${getKucoinBaseUrl()}${endpoint}`, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {
@@ -315,7 +315,7 @@ function getKucoinTradingPairs(wallet) {
       muteHttpExceptions: true
     };
     
-    const response = UrlFetchApp.fetch(`${getKucoinBaseUrl()}${endpoint}`, options);
+    const response = fetchWithLogging(`${getKucoinBaseUrl()}${endpoint}`, options);
     const responseCode = response.getResponseCode();
     
     if (responseCode === 200) {
